@@ -1,7 +1,7 @@
 # 🛡️ ClassiGuard CyFence
 
-> **Enterprise Defensive Web Security & Posture Auditor for Red, Blue, and Purple Teams**  
-> *Zero External Dependencies • Single Standalone Executable (Double-Click Web GUI) • Offline & Air-Gapped Ready • AI-Assisted with Mandatory Human In The Loop*
+> **Enterprise Defensive Web Security Posture & Compliance Suite**  
+> *Single Standalone Executable • One-Click Web GUI • Zero External Dependencies • Offline & Air-Gapped Ready • AI-Assisted with Mandatory Human Approval*
 
 ---
 
@@ -18,143 +18,134 @@
 
 ---
 
-## 🌟 Executive Summary
+## 🌟 How to Run ClassiGuard CyFence (One-Click Launch)
 
-**ClassiGuard CyFence** is an enterprise-grade, zero-impact defensive security auditing engine built in pure Node.js. It assesses web applications and APIs against established cybersecurity benchmarks—including **OWASP ASVS v4.0** (Application Security Verification Standard), **MITRE ATT&CK**, **MITRE D3FEND**, **OWASP WSTG**, and **RFC 8725** (JWT Best Current Practices).
+ClassiGuard CyFence is packaged as a **single, self-contained standalone executable**. You do **not** need to install Node.js, configure dependencies, or run terminal commands.
 
-The product ships as a **single self-contained executable (`cyfence.exe`)** with **zero external dependencies**. No installation, no runtime setup, and no internet access are required.
+### 🚀 Execution Method
 
----
+```
+               ┌────────────────────────────────────────────────────────┐
+               │                  DOWNLOAD & DOUBLE-CLICK               │
+               │                    dist/cyfence.exe                    │
+               └───────────────────────────┬────────────────────────────┘
+                                           │
+                                           ▼
+               ┌────────────────────────────────────────────────────────┐
+               │           AUTOMATIC WEB GUI INITIALIZATION             │
+               │  • Background server starts on http://127.0.0.1:9090   │
+               │  • System default web browser launches automatically   │
+               │  • Ephemeral CSRF guard and loopback isolation active  │
+               └───────────────────────────┬────────────────────────────┘
+                                           │
+                                           ▼
+               ┌────────────────────────────────────────────────────────┐
+               │            COMPLETE DEFENSIVE SECURITY SUITE           │
+               │       All features accessible via point-and-click!     │
+               └────────────────────────────────────────────────────────┘
+```
 
-## 🖥️ Desktop & Web GUI Experience (One-Click Launch)
-
-You do **not** need to memorize CLI commands to use ClassiGuard CyFence. All CLI operations are completely integrated into an embedded graphical Web Suite.
-
-### 🚀 Just Double-Click to Run
-1. Download **`dist/cyfence.exe`** (or `dist/classiguard-cyfence.exe`).
-2. **Double-click `cyfence.exe`**.
-3. CyFence automatically starts its hardened loopback server on `http://127.0.0.1:9090` and **automatically opens your default web browser** to the dashboard.
-
----
-
-### 🎛️ Graphical Operations Available in the Web Suite
-
-The Web GUI provides 6 dedicated operational tabs covering every capability of the engine:
-
-| Tab | Operation | Key Capabilities |
-| :--- | :--- | :--- |
-| **1. 🚀 Single Audit** | Target Posture Audit | Enter any URL, customize request headers, paste JWT tokens for RFC 8725 checks, toggle sensitive route scans (`/.git`, `/.env`), view live ASVS score (0–100), filter findings (Critical, High, Medium, Low, Passed), and **export reports in HTML, JSON, or Markdown** with one click. |
-| **2. 📋 Multi-Target Batch** | Fleet Batch Auditing | Paste a list of URLs directly into the browser text area (or load sample targets), run concurrent fleet scans, view the real-time progress bar, and inspect the **Fleet Assessment Summary Matrix** comparing grades and defect breakdowns. |
-| **3. ⚖️ Drift & Diff** | Posture Drift & Regression | Paste or load baseline and current JSON audit results. Instantly view the **Score Delta** (`+30 Points IMPROVED` or `-15 Points DEGRADED`), side-by-side lists of **New Vulnerabilities / Regressions**, and **Resolved Vulnerabilities**. |
-| **4. 🛡️ Blue Team Auto-Patch** | Server Hardening & SIEM | Automatically generates tailored, copy-paste configuration snippets for **Nginx**, **Apache**, and **Caddy**, plus **Sigma SIEM detection rules (YAML)** and **Elasticsearch Query DSL**. Includes one-click **📋 Copy** and **💾 Download .conf / .yml** buttons. |
-| **5. 🤖 AI Security Advisor** | Assisted Remediation | Multi-provider synthesis supporting **Ollama (100% offline, local air-gapped Llama 3)**, **Anthropic Claude**, and **OpenAI**. Enforces a strict **Human in the Loop Workflow** with interactive **✓ Approve for Staging** and **✕ Reject Proposal** buttons and timestamped audit logs. |
-| **6. 📖 Tour & Architecture** | System Guide & Reference | Integrated reference guide detailing the OWASP ASVS alignment, 50,000 node benchmark metrics, and the 8/8 VAPT security verification matrix. |
-
----
-
-## 🚀 Key Features by Team
-
-### 🔴 Red Team & Attack Surface Discovery
-* **Sensitive Route & File Exposure Scanner**: Passively discovers exposed version control repositories (`/.git/HEAD`), environment secrets (`/.env`), container configs (`/docker-compose.yml`), Spring Boot Actuator endpoints (`/actuator/health`, `/actuator/env`), and OpenAPI documents (`/swagger.json`).
-* **WAF & CDN Perimeter Fingerprinting**: Identifies edge protections (Cloudflare, AWS WAF, Akamai, Imperva Incapsula, Fastly, F5 BIG-IP) or warns of direct origin exposure.
-* **Discovery & RFC Compliance**: Audits `/.well-known/security.txt` (RFC 9116), OpenID Connect discovery endpoints, and checks `/robots.txt` for administrative path leakage.
-* **MITRE ATT&CK Mapping**: Every finding embeds exact ATT&CK Technique IDs (e.g., `T1592`, `T1595.002`, `T1590`, `T1552`).
-
-### 🔵 Blue Team & Detection Engineering
-* **Auto-Remediation Config Generator**: Automatically generates copy-paste hardening configuration patches for **Nginx**, **Apache**, and **Caddy** directly targeting the findings detected during the audit.
-* **Automated SIEM & Sigma Rule Exporter**: For every discovered defect, generates valid **Sigma detection rules (YAML)** and **Elasticsearch query DSL** to alert SOC teams when external actors probe those attack surfaces.
-* **Configuration Drift & Diff Engine**: Compares two audit runs (`cyfence diff base.json current.json`) to track regressions, resolved issues, and score trends across deployment cycles.
-* **MITRE D3FEND Countermeasures**: Explicit defensive mapping to controls such as `D3-HRP` (Header Restructuring Policy), `D3-IRA` (Inbound Restriction Analysis), and `D3-BRF` (Boundary Rule Filtering).
-
-### 🤖 AI Security Advisor (Human Review Mandatory)
-* **Multi-Provider Support**: Integrates seamlessly with **Ollama** (ideal for offline / air-gapped systems with zero internet access), **Anthropic Claude**, **OpenAI**, and **Codex**.
-* **Strict Human in the Loop**: AI outputs are strictly formatted as advisory proposals. The engine explicitly enforces human review before any remediation patch is applied to production systems.
+1. **Download the Executable**:
+   * Windows: Download **[`dist/cyfence.exe`](dist/cyfence.exe)**
+   * Linux: Download **[`dist/classiguard-cyfence-linux.tar.gz`](dist/classiguard-cyfence-linux.tar.gz)**
+2. **Launch the Application**:
+   * **Windows:** Simply **double-click `cyfence.exe`** (or run `.\cyfence.exe` in terminal).
+   * **Linux:** Extract the archive and execute `./cyfence`.
+3. **Use the Application**:
+   * CyFence immediately starts its embedded, air-gapped server on `http://127.0.0.1:9090` and **automatically opens your web browser**.
+   * All options and operations are performed visually through the Web GUI.
 
 ---
 
-## ⚡ 50,000 Machine Scale & Stress Benchmark
+## 🖥️ Complete Application Feature Tour (In the Web GUI)
 
-ClassiGuard CyFence includes a high-throughput fleet auditing engine verified against 50,000 enterprise nodes:
+Every capability of the engine is accessible directly through the visual tabs:
 
-### Benchmark Performance
+### 1. 🚀 Single Target Security Audit
+* **Enter Target URL**: Type or paste any endpoint (e.g. `https://example.com` or local intranet).
+* **Point-and-Click Controls**:
+  * Toggle sensitive route checks (`/.git`, `/.env`, Spring Boot Actuator).
+  * Check for JWT RFC 8725 compliance by pasting tokens.
+  * Send custom audit headers via a simple input box.
+* **Instant Export Buttons**:
+  * Click **Export HTML** to download a visual, styled report.
+  * Click **Export JSON** for machine-readable raw data.
+  * Click **Export MD** for GitHub-flavored Markdown summaries.
+* **Filter Findings**: Click badges to filter between **Critical**, **High**, **Medium**, **Low**, and **Passed** controls.
+
+### 2. 📋 Multi-Target Fleet Batch Auditing
+* **No text files needed**: Paste multiple URLs directly into the browser text area (or click **Load Sample Targets**).
+* Click **Launch Fleet Batch Audit**.
+* Watch the **real-time progress bar** and view the **Fleet Summary Matrix** comparing scores, grades (A–F), and defect counts.
+* Click **Inspect** on any target row to immediately view its detailed findings.
+
+### 3. ⚖️ Configuration Drift & Regression (Diff Engine)
+* Paste baseline and current audit results into side-by-side text boxes (or click **Load Sample Baseline & Current**).
+* Click **Compare Audits**.
+* Instantly view the **Score Delta Badge** (e.g., `+30 Points (IMPROVED)` or `-15 Points (DEGRADED)`).
+* Inspect the **New Vulnerabilities** list to catch regressions and the **Resolved Vulnerabilities** list to verify fixes.
+
+### 4. 🛡️ Blue Team Auto-Remediation & SIEM Exporter
+* Automatically generates tailored configuration snippets based on audit findings:
+  * **Nginx**: Ready-to-paste reverse proxy security headers and dotfile block rules.
+  * **Apache**: `.htaccess` / `httpd.conf` defensive directives.
+  * **Caddy**: Hardened Caddyfile configuration.
+  * **Sigma Rule (YAML)**: Pre-configured SIEM detection rules.
+  * **Elasticsearch Query DSL**: Ready-to-use search query for SOC alerting.
+* Click **📋 Copy** to copy configurations to clipboard, or click **💾 Download** to save `.conf` / `.yml` files to disk.
+
+### 5. 🤖 AI Security Advisor (Human Approval Mandatory)
+* Choose your preferred AI engine:
+  * **Ollama (100% Offline / Local Air-Gapped Llama 3)**
+  * **Anthropic Claude (claude-3-5-sonnet)**
+  * **OpenAI (gpt-4o-mini)**
+* Click **Synthesize AI Remediation Advisory**.
+* **Strict Human-in-the-Loop Workflow**: Review the AI proposal and click **✓ Approve for Staging** or **✕ Reject Proposal**. All approvals are logged to an audit trail with timestamps.
+
+### 6. 📖 Interactive Architecture Tour & Reference
+* Integrated guide displaying OWASP ASVS v4.0 mapping, ATT&CK/D3FEND technique alignment, 50,000 node benchmark metrics, and the 8/8 VAPT security verification checklist.
+
+---
+
+## ⚡ 50,000 Node Enterprise Scale Performance
+
+ClassiGuard CyFence includes a built-in stress-tested audit engine verified against 50,000 synthetic enterprise machines:
+
 * **Total Nodes Audited**: 50,000 machines
-* **Total Execution Time**: **~0.33 seconds** (334.76 ms)
+* **Execution Time**: **~0.33 seconds** (334.76 ms)
 * **Throughput**: **~149,300 machines / second**
-* **Average Latency**: **0.0067 ms** per machine
-* **Peak Memory Heap**: **9.95 MB** (Delta: +4.23 MB, zero buffer bloat, linear GC)
+* **Memory Stability**: Peak heap of **9.95 MB** (+4.23 MB delta, zero memory leaks, clean V8 garbage collection)
 * **Fleet Posture Profile**:
-  * Grade A (Hardened): 10,000 (20.0%)
+  * Grade A (Hardened Baseline): 10,000 (20.0%)
   * Grade B (Minor Gaps): 10,000 (20.0%)
   * Grade C (Moderate Risk): 10,000 (20.0%)
   * Grade D (High Risk): 10,000 (20.0%)
-  * Grade F (Critical Risk): 10,000 (20.0%)
-  * Total Defects Identified across fleet: **270,000 defects**
+  * Grade F (Critical Defects): 10,000 (20.0%)
 
 ---
 
-## 📁 Pre-Compiled Standalone Binaries
+## 📁 Standalone Packages Available in `dist/`
 
-Located in `dist/`:
-* **Windows Standalone Executables**:
-  * `dist/classiguard-cyfence.exe` (Single self-contained `.exe`, zero external dependencies)
-  * `dist/cyfence.exe` (Short alias `.exe` — double-click to auto-launch Web GUI)
-* **Linux Distribution**: `dist/classiguard-cyfence-linux.tar.gz` (Portable tarball with POSIX shell launcher and native ELF compile script)
-* **Universal JS Bundle**: `dist/bundle.cjs` (Universal zero-dependency script)
+* **`dist/cyfence.exe`**: Pre-compiled standalone Windows executable (~89.8 MB). Simply double-click to run!
+* **`dist/classiguard-cyfence.exe`**: Full-name standalone Windows executable.
+* **`dist/classiguard-cyfence-linux.tar.gz`**: Standalone Linux distribution archive (~38 KB).
+* **`dist/bundle.cjs`**: Universal single-file distribution (~135 KB).
 
 ---
 
-## 💻 CI/CD & Headless CLI Automation Reference
+## 🔌 Optional CI/CD Automation (Headless Mode)
 
-For DevOps pipelines, automated scheduled cron jobs, and terminal power users, CLI execution is fully supported whenever command-line arguments are passed:
+For automated DevOps pipelines, Jenkins, and GitHub Actions where no graphical browser is present, passing arguments directly to `cyfence.exe` executes in headless mode:
 
-### 1. Single Target Audit (with CI/CD Quality Gate)
 ```bash
-# Windows
-cyfence.exe https://example.com --min-score 80 --html reports/audit.html --json reports/audit.json
+# Automated CI/CD quality gate (exits with code 1 if score is below 80)
+cyfence.exe https://staging.example.corp --min-score 80 --json report.json
 
-# Linux
-./cyfence https://example.com --min-score 80 --json reports/audit.json
+# Headless multi-target audit from file
+cyfence.exe --targets targets.txt --html batch-report.html
 ```
 
-### 2. Multi-Target Batch Auditing
-```bash
-cyfence.exe --targets targets.txt --html reports/batch-summary.html
-```
-
-### 3. Launch Local Web GUI Explicitly
-```bash
-# Starts embedded browser GUI on http://127.0.0.1:9090 (CSRF Protected & Loopback Bound)
-cyfence.exe gui 9090
-```
-
-### 4. Interactive Console Wizard (TUI)
-```bash
-# Interactive text menu for air-gapped terminal operators without browser access
-cyfence.exe wizard
-```
-
-### 5. Configuration Drift & Regression Analysis
-```bash
-cyfence.exe diff baseline.json current.json
-```
-
-### 6. Blue Team Auto-Remediation Generation
-```bash
-cyfence.exe https://example.com --remediation --sigma detection.yml --export-configs reports/hardening/
-```
-
-### 7. AI Security Advisor (Ollama Local / Offline)
-```bash
-cyfence.exe https://example.com --ai --ai-provider ollama --ai-model llama3
-```
-
----
-
-## 🗺️ Interactive Product Tour
-
-An interactive visual product tour and policy engine simulator is available in:
-* **Standalone Interactive Visual:** [`documents/non-sensitive/product_tour.html`](documents/non-sensitive/product_tour.html)
-* **Interactive Slide Card:** [`documents/non-sensitive/tour_card.html`](documents/non-sensitive/tour_card.html)
+*(If no arguments are provided, CyFence automatically launches the Web GUI suite).*
 
 ---
 
