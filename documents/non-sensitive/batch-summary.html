@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ClassiGuard CyFence: Batch Security Assessment</title>
+  <style>
+    body { background: #0b0f19; color: #f9fafb; font-family: -apple-system, sans-serif; padding: 2rem; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { margin-bottom: 0.5rem; font-size: 1.8rem; }
+    .subtitle { color: #9ca3af; margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; background: #111827; border-radius: 8px; overflow: hidden; margin-top: 1rem; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #1f2937; }
+    th { background: #1f2937; color: #93c5fd; font-size: 0.85rem; text-transform: uppercase; }
+    .grade-A { color: #10b981; font-weight: bold; }
+    .grade-B { color: #3b82f6; font-weight: bold; }
+    .grade-C { color: #f59e0b; font-weight: bold; }
+    .grade-D, .grade-F { color: #ef4444; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛡️ ClassiGuard CyFence: Multi-Target Assessment Summary</h1>
+    <div class="subtitle">Evaluated 2 target(s) &bull; Average Score: <strong>21/100</strong> &bull; Total Critical Defects: <strong>5</strong> &bull; Total High Defects: <strong>1</strong></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Target URL</th>
+          <th>Score</th>
+          <th>Grade</th>
+          <th>Critical</th>
+          <th>High</th>
+          <th>Medium</th>
+          <th>Low</th>
+          <th>Passed</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><a href="http://localhost:8080/insecure" target="_blank" style="color: #93c5fd; text-decoration: none;">http://localhost:8080/insecure</a></td>
+          <td><strong>0/100</strong></td>
+          <td class="grade-F">F</td>
+          <td style="color: #ef4444; font-weight: bold;">3</td>
+          <td style="color: #f59e0b;">1</td>
+          <td>5</td>
+          <td>8</td>
+          <td style="color: #10b981;">1</td>
+        </tr>
+
+        <tr>
+          <td><a href="http://localhost:8080/secure" target="_blank" style="color: #93c5fd; text-decoration: none;">http://localhost:8080/secure</a></td>
+          <td><strong>41/100</strong></td>
+          <td class="grade-D">D</td>
+          <td style="color: #ef4444; font-weight: bold;">2</td>
+          <td style="color: inherit;">0</td>
+          <td>0</td>
+          <td>3</td>
+          <td style="color: #10b981;">9</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

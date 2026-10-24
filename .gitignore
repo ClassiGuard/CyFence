@@ -1,0 +1,33 @@
+# ==========================================
+# STRICT SENSITIVITY & SOURCE CODE EXCLUSIONS
+# ==========================================
+
+# Exclude all internal source code modules
+src/
+scripts/
+bin/
+test/
+lab/
+
+# Exclude sensitive documents, audit findings, and VAPT assessments
+documents/sensitive/
+reports/
+
+# Exclude internal build intermediates
+*.blob
+dist/sea-prep.blob
+*.log
+node_modules/
+
+# Exclude environment, secrets, and local credentials
+.env
+.env.*
+*.pem
+*.key
+*.cert
+*.crt
+
+# Exclude OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini

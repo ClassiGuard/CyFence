@@ -1,0 +1,14 @@
+{
+  "profile": "full",
+  "minScore": 80,
+  "html": "reports/audit-report.html",
+  "json": "reports/audit-report.json",
+  "markdown": "reports/audit-report.md",
+  "remediation": true,
+  "headers": {
+    "X-Audit-Origin": "ClassiGuard-Internal"
+  },
+  "ai": false,
+  "aiProvider": "ollama",
+  "aiModel": "llama3"
+}

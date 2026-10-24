@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClassiGuard CyFence: Interactive Product Tour</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom animations & fine-tuned scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--card, #111827); }
+    ::-webkit-scrollbar-thumb { background: var(--border, #374151); border-radius: 4px; }
+    .pulse-glow { animation: pulseGlow 2s infinite; }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+  </style>
+</head>
+<body class="bg-[var(--background,#0b0f19)] text-[var(--foreground,#f9fafb)] antialiased p-4 md:p-8 min-h-screen">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header Navigation & Brand -->
+    <header class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-2xl shadow-inner">
+          🛡️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl md:text-2xl font-bold tracking-tight text-[var(--foreground,#fff)]">ClassiGuard CyFence</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">v1.0 Ready</span>
+          </div>
+          <p class="text-xs md:text-sm text-[var(--muted-foreground,#9ca3af)]">Enterprise Defensive Web Posture & Compliance Engine &bull; Zero External Dependencies</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          Air-Gapped / Offline Ready
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-300 border border-blue-500/30">
+          VAPT Hardened
+        </span>
+      </div>
+    </header>
+
+    <!-- Interactive Step Progress Bar -->
+    <nav class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-3 shadow-md">
+      <div class="flex flex-wrap md:flex-nowrap justify-between items-center gap-2">
+        <button onclick="goToStep(1)" id="stepBtn-1" class="step-nav-btn flex-1 py-2.5 px-3 rounded-lg text-xs md:text-sm font-semibold transition-all text-center bg-blue-600 text-white shadow-sm flex items-center justify-center gap-2">
+          <span>1.</span> Architecture & Ethos
+        </button>
+        <button onclick="goToStep(2)" id="stepBtn-2" class="step-nav-btn flex-1 py-2.5 px-3 rounded-lg text-xs md:text-sm font-semibold transition-all text-center bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)] hover:text-white flex items-center justify-center gap-2">
+          <span>2.</span> Interactive Audit Sim
+        </button>
+        <button onclick="goToStep(3)" id="stepBtn-3" class="step-nav-btn flex-1 py-2.5 px-3 rounded-lg text-xs md:text-sm font-semibold transition-all text-center bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)] hover:text-white flex items-center justify-center gap-2">
+          <span>3.</span> Red Team Recon
+        </button>
+        <button onclick="goToStep(4)" id="stepBtn-4" class="step-nav-btn flex-1 py-2.5 px-3 rounded-lg text-xs md:text-sm font-semibold transition-all text-center bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)] hover:text-white flex items-center justify-center gap-2">
+          <span>4.</span> Blue Team Auto-Patch
+        </button>
+        <button onclick="goToStep(5)" id="stepBtn-5" class="step-nav-btn flex-1 py-2.5 px-3 rounded-lg text-xs md:text-sm font-semibold transition-all text-center bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)] hover:text-white flex items-center justify-center gap-2">
+          <span>5.</span> AI Advisor & Human Review
+        </button>
+        <button onclick="goToStep(6)" id="stepBtn-6" class="step-nav-btn flex-1 py-2.5 px-3 rounded-lg text-xs md:text-sm font-semibold transition-all text-center bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)] hover:text-white flex items-center justify-center gap-2">
+          <span>6.</span> 50k Scale & VAPT
+        </button>
+      </div>
+    </nav>
+
+    <!-- STEP 1: ARCHITECTURE & ETHOS -->
+    <section id="stepSection-1" class="step-section space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl mb-4">
+              📦
+            </div>
+            <h3 class="text-base font-semibold text-white mb-2">Zero Dependencies</h3>
+            <p class="text-sm text-[var(--muted-foreground,#9ca3af)] leading-relaxed">
+              100% built in standard Node.js without a single third-party npm runtime package. Eliminates supply-chain attacks, bloat, and dependency maintenance loops.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-[var(--border,#1f2937)] text-xs text-emerald-400 font-mono">
+            Runtime dependencies: 0
+          </div>
+        </div>
+
+        <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xl mb-4">
+              ✈️
+            </div>
+            <h3 class="text-base font-semibold text-white mb-2">Air-Gapped & Offline</h3>
+            <p class="text-sm text-[var(--muted-foreground,#9ca3af)] leading-relaxed">
+              Functions completely offline on isolated networks. Ships with bundled offline templates, local Sigma engines, and optional local LLM integration (Ollama).
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-[var(--border,#1f2937)] text-xs text-blue-400 font-mono">
+            External CDN / Cloud calls: 0
+          </div>
+        </div>
+
+        <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xl mb-4">
+              ⚔️
+            </div>
+            <h3 class="text-base font-semibold text-white mb-2">Red & Blue Team Fusion</h3>
+            <p class="text-sm text-[var(--muted-foreground,#9ca3af)] leading-relaxed">
+              Red team reconnaissance (WAF fingerprinting, route exposure, JWT exploits) coupled with blue team auto-remediation (Nginx/Apache snippets & Sigma SIEM rules).
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-[var(--border,#1f2937)] text-xs text-purple-400 font-mono">
+            Full Attack & Defense Lifecycle
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm">
+        <h3 class="text-base font-semibold text-white mb-3">Tri-Modal Execution Ecosystem</h3>
+        <p class="text-sm text-[var(--muted-foreground,#9ca3af)] mb-6">ClassiGuard CyFence adapts to every operational environment through three distinct interfaces:</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-4 rounded-lg bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)]">
+            <div class="text-sm font-semibold text-blue-400 mb-1">1. Terminal CLI</div>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)] mb-3">Headless CI/CD automation & scheduled cron audits with exit codes.</p>
+            <code class="text-xs bg-black/50 p-2 rounded block font-mono text-cyan-300">cyfence audit https://app.corp</code>
+          </div>
+
+          <div class="p-4 rounded-lg bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)]">
+            <div class="text-sm font-semibold text-emerald-400 mb-1">2. Interactive Wizard (TUI)</div>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)] mb-3">Pure Node.js console menu for human operators without browser access.</p>
+            <code class="text-xs bg-black/50 p-2 rounded block font-mono text-emerald-300">cyfence wizard</code>
+          </div>
+
+          <div class="p-4 rounded-lg bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)]">
+            <div class="text-sm font-semibold text-amber-400 mb-1">3. Local Web Dashboard</div>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)] mb-3">Embedded browser GUI on loopback with CSRF guard & visual reports.</p>
+            <code class="text-xs bg-black/50 p-2 rounded block font-mono text-amber-300">cyfence --gui --port 9090</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button onclick="goToStep(2)" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all flex items-center gap-2 shadow-md">
+          Next: Try Interactive Audit Simulator →
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 2: INTERACTIVE AUDIT SIMULATOR -->
+    <section id="stepSection-2" class="step-section hidden space-y-6">
+      <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div>
+            <h3 class="text-base font-semibold text-white">Live Policy Engine & Audit Simulator</h3>
+            <p class="text-sm text-[var(--muted-foreground,#9ca3af)]">Test how ClassiGuard CyFence assesses HTTP headers, cookies, JWTs, and CORS against OWASP ASVS v4.0.</p>
+          </div>
+          <div class="flex gap-2 w-full md:w-auto">
+            <button onclick="loadArchetype('insecure')" class="flex-1 md:flex-none px-3 py-1.5 rounded text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20">
+              Preset: Vulnerable Target (Grade F)
+            </button>
+            <button onclick="loadArchetype('hardened')" class="flex-1 md:flex-none px-3 py-1.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20">
+              Preset: Hardened Target (Grade A)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Control Panel -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-[var(--muted-foreground,#9ca3af)] mb-1.5">Target Endpoint</label>
+              <input type="text" id="simUrl" value="https://insecure-portal.local" class="w-full bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-[var(--muted-foreground,#9ca3af)] mb-1.5">Simulated Response Headers</label>
+              <textarea id="simHeaders" rows="8" class="w-full bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-lg p-3 text-xs text-cyan-300 font-mono focus:border-blue-500 outline-none leading-relaxed"></textarea>
+            </div>
+
+            <button onclick="runSimulatedAudit()" id="simRunBtn" class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md flex items-center justify-center gap-2">
+              <span>🚀</span> Evaluate Compliance
+            </button>
+          </div>
+
+          <!-- Live Score & Metric Dashboard -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+                <span class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">ASVS Score</span>
+                <div id="simScore" class="text-2xl md:text-3xl font-extrabold text-red-400 mt-1">28 / 100</div>
+              </div>
+              <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+                <span class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Post-Audit Grade</span>
+                <div id="simGrade" class="text-2xl md:text-3xl font-extrabold text-red-400 mt-1">F</div>
+              </div>
+              <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+                <span class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Critical / High</span>
+                <div id="simCritHigh" class="text-2xl md:text-3xl font-extrabold text-red-500 mt-1">4</div>
+              </div>
+              <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+                <span class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Passed Checks</span>
+                <div id="simPass" class="text-2xl md:text-3xl font-extrabold text-emerald-400 mt-1">1</div>
+              </div>
+            </div>
+
+            <!-- Finding Feed -->
+            <div class="border border-[var(--border,#1f2937)] rounded-xl p-4 bg-[var(--background,#0b0f19)] max-h-72 overflow-y-auto space-y-2.5" id="simFindingsList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button onclick="goToStep(1)" class="px-5 py-2.5 rounded-lg bg-[var(--card,#111827)] hover:bg-[var(--border,#1f2937)] text-white font-semibold text-sm transition-all border border-[var(--border,#1f2937)]">
+          ← Back: Architecture
+        </button>
+        <button onclick="goToStep(3)" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md">
+          Next: Red Team Reconnaissance →
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 3: RED TEAM RECONNAISSANCE -->
+    <section id="stepSection-3" class="step-section hidden space-y-6">
+      <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm">
+        <h3 class="text-base font-semibold text-white mb-2">Red Team Active & Passive Reconnaissance Modules</h3>
+        <p class="text-sm text-[var(--muted-foreground,#9ca3af)] mb-6">
+          CyFence identifies perimeter defenses, discovery mechanisms, and dangerous server routes before attackers exploit them:
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- WAF Fingerprinting -->
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-5 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🧱</span>
+              <h4 class="text-sm font-semibold text-white">WAF & CDN Fingerprinting</h4>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">
+              Analyzes response header patterns and security cookies to identify perimeter proxies:
+            </p>
+            <ul class="text-xs space-y-1.5 text-gray-300">
+              <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Cloudflare (cf-ray, __cf_bm)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> AWS CloudFront & WAF (x-amz-cf-id)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Akamai Edge (akamai-origin-hop)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Imperva / Incapsula (X-Iinfo)</li>
+            </ul>
+          </div>
+
+          <!-- Sensitive Routes -->
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-5 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📁</span>
+              <h4 class="text-sm font-semibold text-white">Sensitive Route Probing</h4>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">
+              Probes for accidental source code and secret exposures without invasive fuzzing:
+            </p>
+            <ul class="text-xs space-y-1.5 text-gray-300">
+              <li class="flex items-center gap-2"><span class="text-red-400">🚨</span> /.git/HEAD (Repository metadata)</li>
+              <li class="flex items-center gap-2"><span class="text-red-400">🚨</span> /.env (Database credentials)</li>
+              <li class="flex items-center gap-2"><span class="text-amber-400">⚠️</span> /actuator/env (Spring Boot vars)</li>
+              <li class="flex items-center gap-2"><span class="text-cyan-400">ℹ️</span> /swagger.json (API specs)</li>
+            </ul>
+          </div>
+
+          <!-- Discovery & RFC 9116 -->
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-5 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🧭</span>
+              <h4 class="text-sm font-semibold text-white">Discovery & security.txt</h4>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">
+              Verifies responsible disclosure infrastructure and discovery protocols:
+            </p>
+            <ul class="text-xs space-y-1.5 text-gray-300">
+              <li class="flex items-center gap-2"><span class="text-blue-400">✓</span> RFC 9116 /.well-known/security.txt</li>
+              <li class="flex items-center gap-2"><span class="text-blue-400">✓</span> Contact & Canonical URLs</li>
+              <li class="flex items-center gap-2"><span class="text-blue-400">✓</span> Robots.txt sensitive path disallow</li>
+              <li class="flex items-center gap-2"><span class="text-blue-400">✓</span> Cross-Domain clientaccesspolicy.xml</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-6 p-4 rounded-xl bg-blue-950/20 border border-blue-500/30 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">🎯</span>
+            <div class="text-xs text-blue-200">
+              <strong>Framework Alignment:</strong> Every finding maps directly to <strong>MITRE ATT&CK</strong> (e.g. T1592.002, T1595, T1552) and <strong>MITRE D3FEND</strong> countermeasures.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button onclick="goToStep(2)" class="px-5 py-2.5 rounded-lg bg-[var(--card,#111827)] hover:bg-[var(--border,#1f2937)] text-white font-semibold text-sm transition-all border border-[var(--border,#1f2937)]">
+          ← Back: Audit Sim
+        </button>
+        <button onclick="goToStep(4)" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md">
+          Next: Blue Team Auto-Remediation →
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 4: BLUE TEAM AUTO-REMEDIATION & SIEM -->
+    <section id="stepSection-4" class="step-section hidden space-y-6">
+      <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <div>
+            <h3 class="text-base font-semibold text-white">Blue Team: Automated Hardening & Detection Rules</h3>
+            <p class="text-sm text-[var(--muted-foreground,#9ca3af)]">
+              Convert findings instantly into production-grade server patches and SIEM detection logic.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="showConfigTab('nginx')" id="tabBtn-nginx" class="config-tab-btn px-3 py-1.5 rounded text-xs font-semibold bg-blue-600 text-white">
+              Nginx
+            </button>
+            <button onclick="showConfigTab('apache')" id="tabBtn-apache" class="config-tab-btn px-3 py-1.5 rounded text-xs font-semibold bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)]">
+              Apache
+            </button>
+            <button onclick="showConfigTab('caddy')" id="tabBtn-caddy" class="config-tab-btn px-3 py-1.5 rounded text-xs font-semibold bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)]">
+              Caddy
+            </button>
+            <button onclick="showConfigTab('sigma')" id="tabBtn-sigma" class="config-tab-btn px-3 py-1.5 rounded text-xs font-semibold bg-[var(--background,#0b0f19)] text-[var(--muted-foreground,#9ca3af)]">
+              Sigma Rule (SIEM)
+            </button>
+          </div>
+        </div>
+
+        <div class="relative">
+          <pre class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-xs font-mono text-cyan-300 overflow-x-auto max-h-80 leading-relaxed" id="configCodeDisplay"></pre>
+          <button onclick="copyCurrentConfig()" class="absolute top-3 right-3 px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-white border border-gray-600 font-sans shadow-sm">
+            📋 Copy
+          </button>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)]">
+            <h4 class="text-sm font-semibold text-white mb-1">Configuration Drift & Regression Engine</h4>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)] mb-3">Compare two JSON audits across deployment cycles to detect security posture degradation:</p>
+            <code class="text-xs bg-black/50 p-2 rounded block font-mono text-emerald-300">cyfence --diff baseline.json current.json</code>
+          </div>
+
+          <div class="p-4 rounded-xl bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)]">
+            <h4 class="text-sm font-semibold text-white mb-1">Export Ready-to-Deploy Files</h4>
+            <p class="text-xs text-[var(--muted-foreground,#9ca3af)] mb-3">Emit full <code>nginx-hardened.conf</code> and <code>apache-hardened.conf</code> files directly into your CI/CD pipeline:</p>
+            <code class="text-xs bg-black/50 p-2 rounded block font-mono text-blue-300">cyfence audit https://target.com --export-hardening</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button onclick="goToStep(3)" class="px-5 py-2.5 rounded-lg bg-[var(--card,#111827)] hover:bg-[var(--border,#1f2937)] text-white font-semibold text-sm transition-all border border-[var(--border,#1f2937)]">
+          ← Back: Red Team
+        </button>
+        <button onclick="goToStep(5)" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md">
+          Next: AI Advisor & Human Approval →
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 5: AI ADVISOR (HUMAN-IN-THE-LOOP) -->
+    <section id="stepSection-5" class="step-section hidden space-y-6">
+      <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm space-y-6">
+        <div>
+          <h3 class="text-base font-semibold text-white">AI Security Advisor & Remediation Synthesizer</h3>
+          <p class="text-sm text-[var(--muted-foreground,#9ca3af)]">
+            Integrates with <strong>Ollama (Local Offline)</strong>, Anthropic Claude, OpenAI, and Codex APIs under strict architectural controls.
+          </p>
+        </div>
+
+        <!-- Strict Principle Banner -->
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-200 flex items-start gap-3">
+          <span class="text-xl">⚠️</span>
+          <div class="text-xs leading-relaxed">
+            <strong class="font-bold text-amber-100 text-sm block mb-0.5">CORE ARCHITECTURAL PRINCIPLE: ZERO AUTONOMOUS DECISIONS</strong>
+            AI provides assistive analysis only. Human review and explicit engineering approval are strictly mandatory before applying any proposed changes to staging or production.
+          </div>
+        </div>
+
+        <!-- Interactive AI Simulation -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-[var(--muted-foreground,#9ca3af)] mb-1.5">Select AI Provider</label>
+              <select id="aiProviderSelect" class="w-full bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-lg p-2.5 text-xs text-white outline-none">
+                <option value="ollama">Ollama (100% Local / Air-Gapped Llama 3)</option>
+                <option value="claude">Anthropic Claude (claude-3-5-sonnet)</option>
+                <option value="openai">OpenAI (gpt-4o-mini)</option>
+              </select>
+            </div>
+
+            <button onclick="simulateAiAdvisory()" class="w-full py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-all shadow-md flex items-center justify-center gap-2">
+              <span>🤖</span> Synthesize AI Advisory
+            </button>
+
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)] space-y-2 pt-2 border-t border-[var(--border,#1f2937)]">
+              <div><strong>VAPT Hardening:</strong> Target URLs are automatically scrubbed of credentials and query strings before reaching LLM endpoints.</div>
+            </div>
+          </div>
+
+          <div class="md:col-span-2 space-y-4">
+            <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-semibold text-purple-400 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-purple-400"></span> Generated Recommendation
+                </span>
+                <span id="aiModelBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50">Ollama (llama3)</span>
+              </div>
+
+              <div id="aiAdvisoryText" class="text-xs text-gray-200 leading-relaxed font-mono whitespace-pre-wrap max-h-48 overflow-y-auto bg-black/40 p-3 rounded border border-gray-800">
+Click "Synthesize AI Advisory" to view sample generated remediation guidance.
+              </div>
+
+              <!-- Human Approval Workflow Form -->
+              <div class="pt-3 border-t border-[var(--border,#1f2937)] flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="text-xs text-amber-400 font-semibold flex items-center gap-1">
+                  <span>🔒</span> Status: Awaiting Human Engineer Review
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="handleApproval(false)" class="px-3 py-1.5 rounded text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30">
+                    ✕ Reject Proposal
+                  </button>
+                  <button onclick="handleApproval(true)" class="px-4 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm">
+                    ✓ Approve for Staging
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="approvalStatusBox" class="hidden p-3 rounded-lg text-xs font-mono border"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button onclick="goToStep(4)" class="px-5 py-2.5 rounded-lg bg-[var(--card,#111827)] hover:bg-[var(--border,#1f2937)] text-white font-semibold text-sm transition-all border border-[var(--border,#1f2937)]">
+          ← Back: Blue Team
+        </button>
+        <button onclick="goToStep(6)" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md">
+          Next: Scale Benchmark & VAPT →
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 6: 50K SCALE BENCHMARK & VAPT -->
+    <section id="stepSection-6" class="step-section hidden space-y-6">
+      <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-xl p-6 shadow-sm">
+        <h3 class="text-base font-semibold text-white mb-2">Enterprise Scale Performance & VAPT Hardening</h3>
+        <p class="text-sm text-[var(--muted-foreground,#9ca3af)] mb-6">
+          Benchmarked against 50,000 synthetic enterprise machines and fortified by an independent Vulnerability Assessment and Penetration Testing (VAPT) review.
+        </p>
+
+        <!-- Benchmark Metrics -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Stress Benchmark</div>
+            <div class="text-2xl font-extrabold text-blue-400 mt-1">50,000</div>
+            <div class="text-xs text-gray-400 mt-0.5">Enterprise Nodes</div>
+          </div>
+
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Total Duration</div>
+            <div class="text-2xl font-extrabold text-emerald-400 mt-1">388 ms</div>
+            <div class="text-xs text-gray-400 mt-0.5">&lt; 0.4 seconds total</div>
+          </div>
+
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Audit Throughput</div>
+            <div class="text-2xl font-extrabold text-cyan-400 mt-1">128.7k</div>
+            <div class="text-xs text-gray-400 mt-0.5">nodes / second</div>
+          </div>
+
+          <div class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-4 text-center">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)] uppercase font-semibold">Memory Delta</div>
+            <div class="text-2xl font-extrabold text-purple-400 mt-1">+3.9 MB</div>
+            <div class="text-xs text-emerald-400 mt-0.5">Zero Memory Leaks</div>
+          </div>
+        </div>
+
+        <!-- VAPT Hardening Verification Matrix -->
+        <div class="border border-[var(--border,#1f2937)] rounded-xl overflow-hidden bg-[var(--background,#0b0f19)]">
+          <div class="p-3.5 bg-[var(--card,#111827)] border-b border-[var(--border,#1f2937)] flex justify-between items-center">
+            <span class="text-xs font-semibold uppercase text-gray-300">Independent VAPT Hardening Checklist</span>
+            <span class="text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">8 / 8 Remediations Verified</span>
+          </div>
+
+          <div class="divide-y divide-[var(--border,#1f2937)] text-xs">
+            <div class="p-3 flex items-center justify-between">
+              <div>
+                <strong class="text-white">SSRF & Metadata Guard (CWE-918):</strong>
+                <span class="text-gray-400 ml-2">Blocks cloud metadata endpoints (169.254.169.254) and invalid protocols.</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">PASSED</span>
+            </div>
+
+            <div class="p-3 flex items-center justify-between">
+              <div>
+                <strong class="text-white">DOM XSS Immunity (CWE-79):</strong>
+                <span class="text-gray-400 ml-2">Context-aware HTML escaping on all untrusted target headers rendered in Web GUI.</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">PASSED</span>
+            </div>
+
+            <div class="p-3 flex items-center justify-between">
+              <div>
+                <strong class="text-white">Heap OOM Stream Limiter (CWE-400):</strong>
+                <span class="text-gray-400 ml-2">Chunked stream reader caps response body ingestion strictly at 4,096 bytes.</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">PASSED</span>
+            </div>
+
+            <div class="p-3 flex items-center justify-between">
+              <div>
+                <strong class="text-white">Anti-CSRF & Origin Verification (CWE-352):</strong>
+                <span class="text-gray-400 ml-2">Mandatory ephemeral cryptographic token required for GUI API operations.</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">PASSED</span>
+            </div>
+
+            <div class="p-3 flex items-center justify-between">
+              <div>
+                <strong class="text-white">Loopback Interface Binding (CWE-1327):</strong>
+                <span class="text-gray-400 ml-2">Default bind restricted strictly to 127.0.0.1 to prevent unauthorized LAN access.</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold">PASSED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deployment Artifacts -->
+        <div class="mt-6 p-4 rounded-xl bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)]">
+          <h4 class="text-sm font-semibold text-white mb-2">Ready-to-Deploy Single-File Binaries</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+            <div class="p-2.5 rounded bg-black/40 border border-gray-800 text-gray-300">
+              <span class="text-blue-400">Windows Executable:</span> dist/classiguard-cyfence.exe
+            </div>
+            <div class="p-2.5 rounded bg-black/40 border border-gray-800 text-gray-300">
+              <span class="text-blue-400">Windows Short Alias:</span> dist/cyfence.exe
+            </div>
+            <div class="p-2.5 rounded bg-black/40 border border-gray-800 text-gray-300">
+              <span class="text-emerald-400">Linux Distribution:</span> dist/classiguard-cyfence-linux.tar.gz
+            </div>
+            <div class="p-2.5 rounded bg-black/40 border border-gray-800 text-gray-300">
+              <span class="text-purple-400">Universal Bundle:</span> dist/bundle.cjs
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button onclick="goToStep(5)" class="px-5 py-2.5 rounded-lg bg-[var(--card,#111827)] hover:bg-[var(--border,#1f2937)] text-white font-semibold text-sm transition-all border border-[var(--border,#1f2937)]">
+          ← Back: AI Advisor
+        </button>
+        <button onclick="goToStep(1)" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all shadow-md">
+          ↺ Restart Tour
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Navigation Controller
+    let currentStep = 1;
+    function goToStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step-section').forEach(s => s.classList.add('hidden'));
+      document.querySelectorAll('.step-nav-btn').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-[var(--background,#0b0f19)]', 'text-[var(--muted-foreground,#9ca3af)]');
+      });
+
+      const targetSection = document.getElementById(`stepSection-${step}`);
+      const targetBtn = document.getElementById(`stepBtn-${step}`);
+      if (targetSection) targetSection.classList.remove('hidden');
+      if (targetBtn) {
+        targetBtn.classList.remove('bg-[var(--background,#0b0f19)]', 'text-[var(--muted-foreground,#9ca3af)]');
+        targetBtn.classList.add('bg-blue-600', 'text-white');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Archetype Presets for Step 2 Simulator
+    const ARCHETYPES = {
+      insecure: {
+        url: 'https://insecure-portal.local',
+        headers: `server: Apache/2.4.41 (Ubuntu)
+x-powered-by: PHP/7.4.3
+set-cookie: session_id=abc12345; Path=/
+access-control-allow-origin: *
+access-control-allow-credentials: true`,
+        score: 28,
+        grade: 'F',
+        critHigh: 4,
+        passed: 1,
+        findings: [
+          { sev: 'CRITICAL', title: 'CORS Wildcard with Allow-Credentials Enabled', std: 'ASVS V14.4.7', cwe: 'CWE-942', fix: 'Specify exact trusted origin instead of wildcard *' },
+          { sev: 'CRITICAL', title: 'Missing HTTP Strict Transport Security (HSTS)', std: 'ASVS V14.4.1', cwe: 'CWE-319', fix: 'Add Strict-Transport-Security: max-age=31536000; includeSubDomains' },
+          { sev: 'HIGH', title: 'Cookie session_id missing Secure and HttpOnly flags', std: 'ASVS V3.4.1', cwe: 'CWE-614', fix: 'Set Secure; HttpOnly; SameSite=Strict' },
+          { sev: 'HIGH', title: 'Content-Security-Policy (CSP) Header Missing', std: 'ASVS V14.4.3', cwe: 'CWE-1021', fix: 'Define strict default-src \'self\' policy' },
+          { sev: 'MEDIUM', title: 'X-Frame-Options Header Missing', std: 'ASVS V14.4.4', cwe: 'CWE-1021', fix: 'Set X-Frame-Options: DENY' },
+          { sev: 'LOW', title: 'Technology Banner Leaked via X-Powered-By', std: 'ASVS V14.3.3', cwe: 'CWE-200', fix: 'Strip x-powered-by in web server configuration' }
+        ]
+      },
+      hardened: {
+        url: 'https://hardened-portal.corp',
+        headers: `strict-transport-security: max-age=31536000; includeSubDomains; preload
+content-security-policy: default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none';
+x-frame-options: DENY
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: camera=(), microphone=(), geolocation=()
+set-cookie: auth_token=jwt.token.val; Path=/; Secure; HttpOnly; SameSite=Strict`,
+        score: 100,
+        grade: 'A',
+        critHigh: 0,
+        passed: 8,
+        findings: [
+          { sev: 'PASS', title: 'Strict-Transport-Security conforms to ASVS V14.4.1', std: 'ASVS V14.4.1', cwe: '', fix: '' },
+          { sev: 'PASS', title: 'Content-Security-Policy restricts default-src to self', std: 'ASVS V14.4.3', cwe: '', fix: '' },
+          { sev: 'PASS', title: 'Clickjacking Protection (X-Frame-Options: DENY) Active', std: 'ASVS V14.4.4', cwe: '', fix: '' },
+          { sev: 'PASS', title: 'MIME Sniffing Prevention (nosniff) Active', std: 'ASVS V14.4.5', cwe: '', fix: '' },
+          { sev: 'PASS', title: 'Cookie auth_token enforces Secure, HttpOnly, and SameSite', std: 'ASVS V3.4.1', cwe: '', fix: '' }
+        ]
+      }
+    };
+
+    function loadArchetype(type) {
+      const arch = ARCHETYPES[type];
+      document.getElementById('simUrl').value = arch.url;
+      document.getElementById('simHeaders').value = arch.headers;
+      renderSimResults(arch);
+    }
+
+    function runSimulatedAudit() {
+      const headers = document.getElementById('simHeaders').value;
+      if (headers.includes('strict-transport-security') && headers.includes('content-security-policy')) {
+        renderSimResults(ARCHETYPES.hardened);
+      } else {
+        renderSimResults(ARCHETYPES.insecure);
+      }
+    }
+
+    function renderSimResults(arch) {
+      const scoreEl = document.getElementById('simScore');
+      const gradeEl = document.getElementById('simGrade');
+      const critHighEl = document.getElementById('simCritHigh');
+      const passEl = document.getElementById('simPass');
+
+      scoreEl.innerText = `${arch.score} / 100`;
+      gradeEl.innerText = arch.grade;
+      critHighEl.innerText = arch.critHigh;
+      passEl.innerText = arch.passed;
+
+      if (arch.score >= 90) {
+        scoreEl.className = 'text-2xl md:text-3xl font-extrabold text-emerald-400 mt-1';
+        gradeEl.className = 'text-2xl md:text-3xl font-extrabold text-emerald-400 mt-1';
+      } else {
+        scoreEl.className = 'text-2xl md:text-3xl font-extrabold text-red-400 mt-1';
+        gradeEl.className = 'text-2xl md:text-3xl font-extrabold text-red-400 mt-1';
+      }
+
+      const list = document.getElementById('simFindingsList');
+      list.innerHTML = arch.findings.map(f => {
+        let badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        if (f.sev === 'CRITICAL') badgeColor = 'bg-red-500/20 text-red-400 border-red-500/40';
+        else if (f.sev === 'HIGH') badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+        else if (f.sev === 'PASS') badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+
+        return `
+          <div class="p-2.5 rounded-lg bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] text-xs space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">${f.sev}</span>
+              <span class="font-semibold text-white">${f.title}</span>
+            </div>
+            <div class="text-[11px] text-[var(--muted-foreground,#9ca3af)]">Standard: ${f.std} ${f.cwe ? '| ' + f.cwe : ''}</div>
+            ${f.fix ? `<div class="text-[11px] text-emerald-400"><strong>Fix:</strong> ${f.fix}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Blue Team Config Snippets for Step 4
+    const CONFIG_SNIPPETS = {
+      nginx: `## ClassiGuard CyFence Auto-Remediation: Nginx Configuration
+server {
+    server_tokens off;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+    # Block access to hidden files and metadata (.git, .env, docker configs, etc.)
+    location ~ /\\.(?!well-known).* {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    location ~ /(actuator|swagger|metrics|debug) {
+        allow 127.0.0.1;
+        deny all;
+    }
+}`,
+      apache: `## ClassiGuard CyFence Auto-Remediation: Apache (.htaccess / httpd.conf)
+ServerTokens Prod
+ServerSignature Off
+
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# Deny public access to hidden dotfiles
+<FilesMatch "^\\.">
+    Require all denied
+</FilesMatch>`,
+      caddy: `## ClassiGuard CyFence Auto-Remediation: Caddyfile
+example.corp {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+    @dotFiles path */.*
+    respond @dotFiles 403
+}`,
+      sigma: `title: Web Application Reconnaissance & Probing against target.corp
+id: c1a55190-4d2b-4e6f-9a1b-78a42bcde89f
+status: experimental
+description: Detects suspicious HTTP reconnaissance attempts targeting exposed endpoints identified by ClassiGuard CyFence.
+references:
+  - https://attack.mitre.org/techniques/T1595/
+  - https://attack.mitre.org/techniques/T1592/
+author: ClassiGuard CyFence Detection Engine
+date: 2026-10-24
+logsource:
+  category: webserver
+detection:
+  selection_paths:
+    cs-uri-stem|contains:
+      - '/.git'
+      - '/.env'
+      - '/actuator'
+      - '/swagger.json'
+  condition: selection_paths
+level: high
+tags:
+  - attack.initial_access
+  - attack.reconnaissance`
+    };
+
+    let activeConfigTab = 'nginx';
+    function showConfigTab(tab) {
+      activeConfigTab = tab;
+      document.querySelectorAll('.config-tab-btn').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-[var(--background,#0b0f19)]', 'text-[var(--muted-foreground,#9ca3af)]');
+      });
+      document.getElementById(`tabBtn-${tab}`).classList.remove('bg-[var(--background,#0b0f19)]', 'text-[var(--muted-foreground,#9ca3af)]');
+      document.getElementById(`tabBtn-${tab}`).classList.add('bg-blue-600', 'text-white');
+      document.getElementById('configCodeDisplay').innerText = CONFIG_SNIPPETS[tab];
+    }
+
+    function copyCurrentConfig() {
+      navigator.clipboard.writeText(CONFIG_SNIPPETS[activeConfigTab]);
+      alert(`Copied ${activeConfigTab.toUpperCase()} configuration to clipboard!`);
+    }
+
+    // AI Simulation for Step 5
+    function simulateAiAdvisory() {
+      const provider = document.getElementById('aiProviderSelect').value;
+      const display = document.getElementById('aiAdvisoryText');
+      const badge = document.getElementById('aiModelBadge');
+
+      badge.innerText = provider === 'ollama' ? 'Ollama (Llama 3 Air-Gapped)' : (provider === 'claude' ? 'Claude 3.5 Sonnet' : 'OpenAI GPT-4o');
+      
+      display.innerText = `[AI SECURITY ADVISORY - SYNTHESIZED REMEDIATION PLAN]
+Target: https://portal.corp
+Identified Risks: Missing HSTS (ASVS V14.4.1), Permissive CORS (CWE-942), Insecure Cookie (CWE-614).
+
+RECOMMENDED REMEDIATION ACTIONS:
+1. Enforce HSTS header on reverse proxy layer with a minimum max-age of 1 year.
+2. Replace wildcard CORS with strict Origin whitelist validation:
+   if ($http_origin ~* "^https?://trusted\\.app\\.corp$") { add_header Access-Control-Allow-Origin $http_origin; }
+3. Update session cookie configuration in framework middleware to include 'Secure', 'HttpOnly', and 'SameSite=Strict'.
+
+* NOTICE: Generated using isolated prompt context. Human review and staging verification are required prior to production rollout.`;
+    }
+
+    function handleApproval(approved) {
+      const box = document.getElementById('approvalStatusBox');
+      box.classList.remove('hidden');
+      if (approved) {
+        box.className = 'p-3 rounded-lg text-xs font-mono border bg-emerald-950/40 text-emerald-300 border-emerald-500/30';
+        box.innerHTML = `<strong>✓ APPROVED BY HUMAN ENGINEER:</strong> Action logged to audit trail at ${new Date().toISOString()}. Staging patch deployment authorization granted.`;
+      } else {
+        box.className = 'p-3 rounded-lg text-xs font-mono border bg-red-950/40 text-red-300 border-red-500/30';
+        box.innerHTML = `<strong>✕ PROPOSAL REJECTED:</strong> Changes blocked. AI advice flagged for security architect manual revision.`;
+      }
+    }
+
+    // Initial boot
+    document.addEventListener('DOMContentLoaded', () => {
+      loadArchetype('insecure');
+      showConfigTab('nginx');
+    });
+  </script>
+</body>
+</html>

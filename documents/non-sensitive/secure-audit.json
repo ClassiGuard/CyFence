@@ -1,0 +1,77 @@
+{
+  "targetUrl": "http://localhost:8080/secure",
+  "timestamp": "2026-10-23T09:22:43.320Z",
+  "httpStatus": 200,
+  "compliance": {
+    "score": 100,
+    "grade": "A",
+    "counts": {
+      "total": 8,
+      "passed": 8,
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "info": 0
+    },
+    "totalDefects": 0
+  },
+  "findings": [
+    {
+      "id": "SEC-HDR-02-PASS",
+      "title": "Content-Security-Policy is present and configured",
+      "standard": "OWASP ASVS V14.4.1",
+      "severity": "PASS",
+      "details": "CSP header detected with restrictive baseline directives."
+    },
+    {
+      "id": "SEC-HDR-03-PASS",
+      "title": "Clickjacking protections verified",
+      "standard": "OWASP ASVS V14.4.3",
+      "severity": "PASS",
+      "details": "X-Frame-Options set to DENY."
+    },
+    {
+      "id": "SEC-HDR-04-PASS",
+      "title": "MIME-type sniffing protection active",
+      "standard": "OWASP ASVS V14.4.4",
+      "severity": "PASS",
+      "details": "X-Content-Type-Options is correctly set to `nosniff`."
+    },
+    {
+      "id": "SEC-HDR-05-PASS",
+      "title": "Referrer-Policy configured securely",
+      "standard": "OWASP ASVS V14.4.5",
+      "severity": "PASS",
+      "details": "Referrer-Policy set to strict-origin-when-cross-origin."
+    },
+    {
+      "id": "SEC-HDR-06-PASS",
+      "title": "Permissions-Policy configured",
+      "standard": "OWASP ASVS V14.4.6",
+      "severity": "PASS",
+      "details": "Browser features explicitly restricted via Permissions-Policy."
+    },
+    {
+      "id": "SEC-COOKIE-01-PASS",
+      "title": "Cookie 'session_token' has HttpOnly flag set",
+      "standard": "OWASP ASVS V3.4.2",
+      "severity": "PASS",
+      "details": "HttpOnly protects cookie 'session_token' from script-based exfiltration."
+    },
+    {
+      "id": "SEC-COOKIE-02-PASS",
+      "title": "Cookie 'session_token' has Secure attribute set",
+      "standard": "OWASP ASVS V3.4.1",
+      "severity": "PASS",
+      "details": "Cookie 'session_token' is restricted to encrypted transport."
+    },
+    {
+      "id": "SEC-COOKIE-03-PASS",
+      "title": "Cookie 'session_token' SameSite attribute set to strict",
+      "standard": "OWASP ASVS V3.4.3",
+      "severity": "PASS",
+      "details": "SameSite=strict mitigates cross-site request forgery."
+    }
+  ]
+}

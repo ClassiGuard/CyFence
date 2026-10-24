@@ -1,0 +1,5 @@
+# ClassiGuard CyFence Batch Audit Targets
+# Add one target per line. Lines beginning with '#' are comments.
+
+http://localhost:8080/insecure
+http://localhost:8080/secure
