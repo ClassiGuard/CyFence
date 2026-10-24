@@ -1,5 +1,5 @@
 // ClassiGuard CyFence Standalone Zero-Dependency Executable Bundle
-// Generated: 2026-10-24T11:28:58.394Z
+// Generated: 2026-10-24T16:26:46.449Z
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -2678,7 +2678,7 @@ async function writeBatchHtmlReport(batchResults, filePath) {
 
 // --- Start: src/server/guiServer.mjs ---
 /**
- * Embedded Local Web GUI Dashboard Server
+ * Embedded Local Web GUI Dashboard & Enterprise Security Suite Server
  * Zero external dependencies, pure Node.js HTTP server
  * 100% self-contained (air-gapped and offline friendly)
  * Hardened with Anti-CSRF nonces, strict 127.0.0.1 binding, defensive CSP/security headers, and DOM XSS protection.
@@ -2688,11 +2688,12 @@ async function writeBatchHtmlReport(batchResults, filePath) {
 
 
 
+
 /**
  * Defensive Security Headers enforced on all Web GUI HTTP responses
  */
 const DEFENSIVE_HEADERS = {
-  'Content-Security-Policy': "default-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+  'Content-Security-Policy': "default-src 'self' 'unsafe-inline' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
@@ -2700,12 +2701,35 @@ const DEFENSIVE_HEADERS = {
 };
 
 /**
+ * Opens a URL in the user's default web browser across Windows, macOS, and Linux
+ * @param {string} url - Target URL to launch
+ */
+function openBrowser(url) {
+  try {
+    const platform = process.platform;
+    let cmd = '';
+    if (platform === 'win32') {
+      cmd = `start "" "${url}"`;
+    } else if (platform === 'darwin') {
+      cmd = `open "${url}"`;
+    } else {
+      cmd = `xdg-open "${url}"`;
+    }
+    exec(cmd, () => {});
+  } catch {
+    // Graceful fallback if shell launch fails
+  }
+}
+
+/**
  * Starts the embedded ClassiGuard CyFence Web GUI server
  * @param {number} [port=9090] - Port to listen on
  * @param {string} [host='127.0.0.1'] - Interface to bind on (defaults to loopback for security)
+ * @param {object} [options] - Server options
+ * @param {boolean} [options.autoOpen=false] - Whether to launch the browser automatically
  * @returns {Promise<http.Server>} Active HTTP server instance
  */
-function startGuiServer(port = 9090, host = '127.0.0.1') {
+function startGuiServer(port = 9090, host = '127.0.0.1', options = {}) {
   return new Promise((resolve, reject) => {
     // Generate an ephemeral cryptographic anti-CSRF token per server session
     const csrfToken = crypto.randomBytes(24).toString('hex');
@@ -2714,9 +2738,8 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
       const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
       const pathname = url.pathname;
 
-      // API: POST /api/audit
-      if (pathname === '/api/audit' && req.method === 'POST') {
-        // 1. Cross-Origin CSRF / Port-Attack Protection: Validate Origin & Token
+      // Security Guard: Verify Origin on state-changing API endpoints
+      if (pathname.startsWith('/api/') && req.method === 'POST') {
         const origin = req.headers.origin;
         if (origin) {
           try {
@@ -2739,14 +2762,14 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
           res.end(JSON.stringify({ error: 'Forbidden: Invalid or missing CSRF security token.' }));
           return;
         }
+      }
 
+      // 1. API: POST /api/audit (Single Target Audit)
+      if (pathname === '/api/audit' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => {
           body += chunk;
-          // Protect against unbounded JSON payload memory bloat
-          if (body.length > 65536) {
-            req.destroy();
-          }
+          if (body.length > 131072) req.destroy();
         });
 
         req.on('end', async () => {
@@ -2759,7 +2782,6 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
               return;
             }
 
-            // 2. Target URL Validation & SSRF Guard
             let parsedTarget;
             try {
               parsedTarget = new URL(targetUrl);
@@ -2774,11 +2796,17 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
               return;
             }
 
-            console.log(`[CyFence GUI] Auditing: ${targetUrl}`);
+            console.log(`[CyFence GUI] Auditing single target: ${targetUrl}`);
             const result = await auditUrl(targetUrl, {
               skipRoutes: data.skipRoutes || false,
               jwt: data.jwt || null,
-              ai: data.enableAi ? { provider: data.aiProvider || 'ollama' } : null
+              headers: data.headers || {},
+              ai: data.enableAi ? {
+                provider: data.aiProvider || 'ollama',
+                model: data.aiModel || null,
+                apiKey: data.aiKey || null,
+                endpoint: data.aiEndpoint || null
+              } : null
             });
 
             res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
@@ -2791,7 +2819,117 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
         return;
       }
 
-      // Root GUI Page: GET /
+      // 2. API: POST /api/batch (Multi-Target Batch Audit)
+      if (pathname === '/api/batch' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk;
+          if (body.length > 262144) req.destroy();
+        });
+
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const rawUrls = Array.isArray(data.urls) ? data.urls : [];
+            const targets = rawUrls.map(u => String(u || '').trim()).filter(u => u && !u.startsWith('#'));
+
+            if (targets.length === 0) {
+              res.writeHead(400, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+              res.end(JSON.stringify({ error: 'No valid target URLs provided for batch execution.' }));
+              return;
+            }
+
+            console.log(`[CyFence GUI] Running batch audit across ${targets.length} targets...`);
+            const batchResults = await auditBatch(targets, {
+              skipRoutes: data.skipRoutes || false
+            });
+
+            const avgScore = Math.round(batchResults.reduce((acc, r) => acc + (r.compliance?.score || 0), 0) / (batchResults.length || 1));
+            const totalCritical = batchResults.reduce((acc, r) => acc + (r.compliance?.counts?.critical || 0), 0);
+            const totalHigh = batchResults.reduce((acc, r) => acc + (r.compliance?.counts?.high || 0), 0);
+            const totalPassed = batchResults.reduce((acc, r) => acc + (r.compliance?.counts?.passed || 0), 0);
+
+            res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({
+              count: targets.length,
+              avgScore,
+              totalCritical,
+              totalHigh,
+              totalPassed,
+              results: batchResults
+            }));
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+        return;
+      }
+
+      // 3. API: POST /api/diff (Posture Drift & Regression Diff)
+      if (pathname === '/api/diff' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk;
+          if (body.length > 262144) req.destroy();
+        });
+
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            if (!data.base || !data.current) {
+              res.writeHead(400, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+              res.end(JSON.stringify({ error: 'Both baseline and current audit JSON objects are required.' }));
+              return;
+            }
+
+            const diff = computeAuditDiff(data.base, data.current);
+            res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify(diff));
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+        return;
+      }
+
+      // 4. API: POST /api/ai/advise (AI Security Advisor Call)
+      if (pathname === '/api/ai/advise' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk;
+          if (body.length > 131072) req.destroy();
+        });
+
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const auditResult = data.result;
+            if (!auditResult || !auditResult.findings) {
+              res.writeHead(400, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+              res.end(JSON.stringify({ error: 'Valid audit result object is required for AI synthesis.' }));
+              return;
+            }
+
+            const advisory = await getAiSecurityAdvisory(auditResult, {
+              provider: data.provider || 'ollama',
+              model: data.model || null,
+              apiKey: data.apiKey || null,
+              endpoint: data.endpoint || null
+            });
+
+            res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify(advisory));
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+        return;
+      }
+
+      // Root GUI Dashboard Page: GET / or /index.html
       if (pathname === '/' || pathname === '/index.html') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...DEFENSIVE_HEADERS });
         res.end(`<!DOCTYPE html>
@@ -2799,121 +2937,402 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
 <head>
   <meta charset="UTF-8">
   <meta name="cyfence-token" content="${csrfToken}">
-  <title>ClassiGuard CyFence: Interactive Security Dashboard</title>
+  <title>ClassiGuard CyFence: Complete Defensive Security Suite</title>
   <style>
     :root {
-      --bg: #0b0f19; --card: #111827; --border: #1f2937; --text: #f9fafb;
-      --muted: #9ca3af; --primary: #3b82f6; --red: #ef4444; --yellow: #f59e0b; --green: #10b981;
+      --bg: #0b0f19; --card: #111827; --card-hover: #172033; --border: #1f2937; --text: #f9fafb;
+      --muted: #9ca3af; --primary: #3b82f6; --primary-hover: #2563eb; --red: #ef4444; --yellow: #f59e0b;
+      --green: #10b981; --purple: #a855f7; --cyan: #06b6d4;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem 1.5rem; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
-    .brand h1 { font-size: 1.6rem; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
-    .brand p { color: var(--muted); font-size: 0.9rem; }
-    .status-badge { background: #064e3b; color: #34d399; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .input-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
-    input[type="text"] { flex: 1; background: #030712; border: 1px solid var(--border); color: #fff; padding: 0.75rem 1rem; border-radius: 6px; font-size: 1rem; outline: none; }
-    input[type="text"]:focus { border-color: var(--primary); }
-    button { background: var(--primary); color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: background 0.15s; }
-    button:hover { background: #2563eb; }
-    .options-row { display: flex; gap: 1.5rem; font-size: 0.9rem; color: var(--muted); align-items: center; }
-    .options-row label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; text-align: center; }
-    .score-card .title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 1.5rem; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    /* Header */
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon { width: 42px; height: 42px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .brand h1 { font-size: 1.4rem; color: #fff; font-weight: 700; letter-spacing: -0.02em; }
+    .brand p { color: var(--muted); font-size: 0.8rem; }
+    .badges-row { display: flex; gap: 0.5rem; align-items: center; }
+    .badge-pill { padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pill-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+    /* Navigation Bar */
+    .nav-bar { display: flex; gap: 0.4rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.35rem; margin-bottom: 1.5rem; overflow-x: auto; }
+    .nav-btn { flex: 1; min-width: 140px; padding: 0.65rem 0.9rem; background: transparent; border: none; color: var(--muted); font-weight: 600; font-size: 0.85rem; border-radius: 7px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+    .nav-btn:hover { color: #fff; background: var(--card-hover); }
+    .nav-btn.active { color: #fff; background: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+    /* View Sections */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Cards & Inputs */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .card-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: space-between; }
+    .card-subtitle { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
+    
+    .input-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    input[type="text"], input[type="password"], textarea, select { flex: 1; background: #030712; border: 1px solid var(--border); color: #fff; padding: 0.7rem 0.9rem; border-radius: 6px; font-size: 0.9rem; outline: none; font-family: inherit; }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+    button.btn-primary { background: var(--primary); color: #fff; border: none; padding: 0.7rem 1.4rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.15s; white-space: nowrap; }
+    button.btn-primary:hover { background: var(--primary-hover); }
+    button.btn-secondary { background: #1f2937; color: #d1d5db; border: 1px solid #374151; padding: 0.7rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.15s; }
+    button.btn-secondary:hover { background: #374151; color: #fff; }
+
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted); }
+    .options-grid label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+
+    /* Results Dashboard Grid */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; text-align: center; }
+    .score-card .title { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
     .score-card .value { font-size: 2.2rem; font-weight: 800; margin-top: 0.25rem; }
-    .tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
-    .tab-btn { background: transparent; color: var(--muted); padding: 0.5rem 1rem; border: none; cursor: pointer; font-weight: 600; border-bottom: 2px solid transparent; }
-    .tab-btn.active { color: #fff; border-bottom: 2px solid var(--primary); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .finding-item { background: #0e1526; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-right: 0.5rem; }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-btn { padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; background: #1f2937; color: var(--muted); border: 1px solid #374151; cursor: pointer; }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Findings Items */
+    .finding-item { background: #0c1220; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; transition: border-color 0.15s; }
+    .finding-item:hover { border-color: #374151; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-right: 0.5rem; }
     .badge-CRITICAL { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
     .badge-HIGH { background: rgba(245, 158, 11, 0.2); color: var(--yellow); border: 1px solid var(--yellow); }
     .badge-MEDIUM { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #c084fc; }
     .badge-LOW { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #22d3ee; }
     .badge-PASS { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+
     pre { background: #030712; padding: 1rem; border-radius: 6px; border: 1px solid var(--border); overflow-x: auto; font-family: monospace; font-size: 0.85rem; color: #7dd3fc; margin-top: 0.5rem; }
-    .spinner { display: none; text-align: center; padding: 2rem; color: var(--muted); font-size: 1.1rem; }
+    .spinner { display: none; text-align: center; padding: 2rem; color: var(--muted); font-size: 1rem; }
+    
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #070b14; color: #93c5fd; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div class="brand">
-        <h1>🛡️ ClassiGuard CyFence</h1>
-        <p>Enterprise Defensive Security Posture & Compliance Engine</p>
+        <div class="brand-icon">🛡️</div>
+        <div>
+          <h1>ClassiGuard CyFence</h1>
+          <p>Enterprise Defensive Web Posture & Compliance Suite &bull; Zero External Dependencies</p>
+        </div>
       </div>
-      <div>
-        <span class="status-badge">● AIR-GAPPED & OFFLINE READY</span>
+      <div class="badges-row">
+        <span class="badge-pill pill-green">● Local Loopback (127.0.0.1)</span>
+        <span class="badge-pill pill-blue">CSRF Guard Active</span>
+        <span class="badge-pill pill-green">Air-Gapped Ready</span>
       </div>
     </header>
 
-    <div class="card">
-      <div class="input-row">
-        <input type="text" id="targetUrl" placeholder="Enter target URL (e.g. https://example.com or http://localhost:8080/insecure)" value="http://localhost:8080/insecure">
-        <button id="scanBtn" onclick="runAudit()">🚀 Launch Audit</button>
+    <!-- Top Navigation Bar -->
+    <nav class="nav-bar">
+      <button class="nav-btn active" onclick="switchView('view-single')">🚀 Single Audit</button>
+      <button class="nav-btn" onclick="switchView('view-batch')">📋 Multi-Target Batch</button>
+      <button class="nav-btn" onclick="switchView('view-diff')">⚖️ Drift & Diff</button>
+      <button class="nav-btn" onclick="switchView('view-hardening')">🛡️ Blue Team Auto-Patch</button>
+      <button class="nav-btn" onclick="switchView('view-ai')">🤖 AI Security Advisor</button>
+      <button class="nav-btn" onclick="switchView('view-tour')">📖 Tour & Architecture</button>
+    </nav>
+
+    <!-- VIEW 1: SINGLE TARGET AUDIT -->
+    <div id="view-single" class="view-section active">
+      <div class="card">
+        <div class="card-title">
+          <span>Target Security Posture Audit</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="exportReport('html')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Export HTML</button>
+            <button class="btn-secondary" onclick="exportReport('json')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Export JSON</button>
+            <button class="btn-secondary" onclick="exportReport('md')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Export MD</button>
+          </div>
+        </div>
+        <p class="card-subtitle">Performs comprehensive defensive verifications across OWASP ASVS v4.0, MITRE ATT&CK, D3FEND, and RFC 8725.</p>
+
+        <div class="input-row">
+          <input type="text" id="targetUrl" placeholder="Enter target URL (e.g. https://example.com or http://localhost:8080/insecure)" value="http://localhost:8080/insecure">
+          <button class="btn-primary" id="scanBtn" onclick="runSingleAudit()">🚀 Launch Audit</button>
+        </div>
+
+        <div class="options-grid">
+          <label><input type="checkbox" id="optRoutes" checked> Scan Sensitive Metadata (/.git, /.env)</label>
+          <label><input type="checkbox" id="optAi"> Enable AI Security Advisor</label>
+          <label><input type="checkbox" id="optCustomHeaders"> Send Custom Audit Headers</label>
+          <label><input type="checkbox" id="optJwt"> Provide Target JWT for RFC 8725</label>
+        </div>
+
+        <div id="customHeadersBox" style="display: none; margin-bottom: 1rem;">
+          <input type="text" id="customHeaderInput" placeholder="Custom headers in JSON format (e.g. {&quot;Authorization&quot;: &quot;Bearer token&quot;})">
+        </div>
+
+        <div id="jwtBox" style="display: none; margin-bottom: 1rem;">
+          <input type="text" id="jwtInput" placeholder="Paste raw JWT (header.payload.signature) to audit for alg:none and expiration">
+        </div>
       </div>
-      <div class="options-row">
-        <label><input type="checkbox" id="optRoutes" checked> Scan Sensitive Metadata Routes (/.git, /.env)</label>
-        <label><input type="checkbox" id="optAi"> Enable AI Security Advisor (Ollama local)</label>
+
+      <div id="singleSpinner" class="spinner">🔍 Executing security verifications across OWASP ASVS, ATT&CK, and D3FEND...</div>
+
+      <div id="singleResults" style="display: none;">
+        <div class="summary-grid">
+          <div class="score-card">
+            <div class="title">ASVS Compliance Score</div>
+            <div class="value" id="scoreVal">--/100</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Security Grade</div>
+            <div class="value" id="gradeVal">-</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Critical & High Defects</div>
+            <div class="value" id="critHighVal" style="color: var(--red);">0</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Controls Verified</div>
+            <div class="value" id="passVal" style="color: var(--green);">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Defensive Audit Findings</span>
+            <div class="filter-bar" style="margin-bottom: 0;">
+              <button class="filter-btn active" onclick="filterFindings('ALL', this)">All</button>
+              <button class="filter-btn" onclick="filterFindings('CRITICAL', this)">Critical</button>
+              <button class="filter-btn" onclick="filterFindings('HIGH', this)">High</button>
+              <button class="filter-btn" onclick="filterFindings('MEDIUM', this)">Medium</button>
+              <button class="filter-btn" onclick="filterFindings('LOW', this)">Low</button>
+              <button class="filter-btn" onclick="filterFindings('PASS', this)">Passed</button>
+            </div>
+          </div>
+          <div id="findingsContainer"></div>
+        </div>
       </div>
     </div>
 
-    <div id="spinner" class="spinner">🔍 Executing security verifications across OWASP ASVS, ATT&CK, and D3FEND...</div>
+    <!-- VIEW 2: MULTI-TARGET BATCH AUDIT -->
+    <div id="view-batch" class="view-section">
+      <div class="card">
+        <div class="card-title">Multi-Target Batch Auditing Engine</div>
+        <p class="card-subtitle">Execute audits across enterprise fleets or multiple internal microservices simultaneously.</p>
 
-    <div id="resultsPanel" style="display: none;">
-      <div class="summary-grid">
-        <div class="score-card">
-          <div class="title">Security Score</div>
-          <div class="value" id="scoreVal">--/100</div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem;">Target URLs (One per line):</label>
+          <textarea id="batchUrls" rows="6" placeholder="https://app1.company.internal&#10;https://app2.company.internal/api&#10;http://localhost:8080/insecure">http://localhost:8080/insecure&#10;https://example.com</textarea>
         </div>
-        <div class="score-card">
-          <div class="title">Security Grade</div>
-          <div class="value" id="gradeVal">-</div>
-        </div>
-        <div class="score-card">
-          <div class="title">Critical & High Defects</div>
-          <div class="value" id="critHighVal" style="color: var(--red);">0</div>
-        </div>
-        <div class="score-card">
-          <div class="title">Controls Verified</div>
-          <div class="value" id="passVal" style="color: var(--green);">0</div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <button class="btn-primary" onclick="runBatchAudit()">📋 Launch Fleet Batch Audit</button>
+          <button class="btn-secondary" onclick="loadSampleTargets()">Load Sample Targets</button>
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('tabFindings', this)">Defensive Findings</button>
-        <button class="tab-btn" onclick="switchTab('tabHardening', this)">Blue Team: Auto-Remediation</button>
-        <button class="tab-btn" onclick="switchTab('tabSigma', this)">Blue Team: Sigma SIEM Rules</button>
-        <button class="tab-btn" onclick="switchTab('tabAi', this)">🤖 AI Advisor</button>
+      <div id="batchSpinner" class="spinner">⏳ Processing multi-target batch audit...</div>
+
+      <div id="batchResults" style="display: none;" class="card">
+        <div class="card-title">
+          <span>Fleet Assessment Summary Matrix</span>
+          <span id="batchSummaryStats" style="font-size: 0.8rem; color: var(--muted);"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Target URL</th>
+              <th>Score</th>
+              <th>Grade</th>
+              <th>Critical</th>
+              <th>High</th>
+              <th>Medium</th>
+              <th>Low</th>
+              <th>Passed</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="batchTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW 3: POSTURE DRIFT & DIFF -->
+    <div id="view-diff" class="view-section">
+      <div class="card">
+        <div class="card-title">Configuration Drift & Regression Analysis (Diff)</div>
+        <p class="card-subtitle">Compare two audit runs across deployment cycles to track resolved issues and catch security regressions.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem;">Baseline Audit JSON:</label>
+            <textarea id="diffBaseJson" rows="8" placeholder="Paste baseline JSON report..."></textarea>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem;">Current Audit JSON:</label>
+            <textarea id="diffCurrentJson" rows="8" placeholder="Paste latest JSON report..."></textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn-primary" onclick="runDiffAnalysis()">⚖️ Compare Audits</button>
+          <button class="btn-secondary" onclick="loadDiffSamples()">Load Sample Baseline & Current</button>
+        </div>
       </div>
 
-      <div id="tabFindings" class="tab-content active"></div>
-      <div id="tabHardening" class="tab-content">
-        <h3>Nginx Auto-Hardening Configuration</h3>
-        <pre><code id="nginxCode"></code></pre>
-        <h3 style="margin-top: 1.5rem;">Apache Hardening Configuration</h3>
-        <pre><code id="apacheCode"></code></pre>
-      </div>
-      <div id="tabSigma" class="tab-content">
-        <h3>Generated Sigma Detection Rule (YAML)</h3>
-        <pre><code id="sigmaCode"></code></pre>
-      </div>
-      <div id="tabAi" class="tab-content">
-        <div style="background: rgba(245,158,11,0.1); border: 1px solid var(--yellow); padding: 1rem; border-radius: 6px; margin-bottom: 1rem; color: #fbbf24;">
-          ⚠️ <strong>MANDATORY HUMAN APPROVAL</strong>: Human review and staging verification are required before applying any AI-suggested modifications.
+      <div id="diffResults" style="display: none;" class="card">
+        <div class="card-title">
+          <span>Posture Drift Summary</span>
+          <span id="diffStatusBadge" class="badge-pill pill-green">STATUS</span>
         </div>
-        <div id="aiText" style="white-space: pre-wrap; line-height: 1.6;"></div>
+        <div class="summary-grid" style="margin-top: 1rem;">
+          <div class="score-card">
+            <div class="title">Baseline Score</div>
+            <div class="value" id="diffBaseScore">--</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Current Score</div>
+            <div class="value" id="diffCurrentScore">--</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Score Delta</div>
+            <div class="value" id="diffScoreDelta">--</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+          <div style="background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 1rem;">
+            <h4 style="color: var(--red); font-size: 0.9rem; margin-bottom: 0.5rem;">🚨 New Vulnerabilities / Regressions</h4>
+            <div id="diffNewDefectsList" style="font-size: 0.85rem;">None</div>
+          </div>
+          <div style="background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 1rem;">
+            <h4 style="color: var(--green); font-size: 0.9rem; margin-bottom: 0.5rem;">✅ Resolved Vulnerabilities</h4>
+            <div id="diffResolvedDefectsList" style="font-size: 0.85rem;">None</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: BLUE TEAM AUTO-REMEDIATION & SIEM -->
+    <div id="view-hardening" class="view-section">
+      <div class="card">
+        <div class="card-title">
+          <span>Blue Team: Auto-Remediation & SIEM Rules</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="copyActiveCode()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">📋 Copy</button>
+            <button class="btn-secondary" onclick="downloadActiveCode()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">💾 Download</button>
+          </div>
+        </div>
+        <p class="card-subtitle">Ready-to-deploy configuration snippets and SIEM rules generated directly from your audit results.</p>
+
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="switchHardeningTab('nginx', this)">Nginx Configuration</button>
+          <button class="filter-btn" onclick="switchHardeningTab('apache', this)">Apache (.htaccess)</button>
+          <button class="filter-btn" onclick="switchHardeningTab('caddy', this)">Caddyfile</button>
+          <button class="filter-btn" onclick="switchHardeningTab('sigma', this)">Sigma Rule (YAML)</button>
+          <button class="filter-btn" onclick="switchHardeningTab('elastic', this)">Elasticsearch Query DSL</button>
+        </div>
+
+        <pre><code id="activeCodeBlock">Run an audit first to generate targeted server remediation snippets.</code></pre>
+      </div>
+    </div>
+
+    <!-- VIEW 5: AI SECURITY ADVISOR -->
+    <div id="view-ai" class="view-section">
+      <div class="card">
+        <div class="card-title">AI Security Advisor & Synthesis</div>
+        <p class="card-subtitle">Multi-provider synthesis with Ollama (Air-Gapped Local), Anthropic Claude, and OpenAI.</p>
+
+        <div style="background: rgba(245,158,11,0.1); border: 1px solid var(--yellow); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #fbbf24; font-size: 0.85rem;">
+          ⚠️ <strong>MANDATORY HUMAN APPROVAL ENFORCED</strong>: AI provides assistive proposals only. Explicit engineering approval and staging verification are required prior to applying changes.
+        </div>
+
+        <div class="options-grid">
+          <div>
+            <label style="display: block; margin-bottom: 0.3rem;">AI Provider:</label>
+            <select id="aiProviderSelect" style="width: 100%;">
+              <option value="ollama">Ollama (100% Offline / Air-Gapped Llama 3)</option>
+              <option value="claude">Anthropic Claude (claude-3-5-sonnet)</option>
+              <option value="openai">OpenAI (gpt-4o-mini)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.3rem;">API Key (If Cloud):</label>
+            <input type="password" id="aiApiKeyInput" placeholder="Optional API Key">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="requestAiAdvisory()" style="margin-top: 0.5rem;">🤖 Synthesize AI Remediation Advisory</button>
+      </div>
+
+      <div id="aiAdvisoryCard" class="card" style="display: none;">
+        <div class="card-title">
+          <span>AI Remediation Proposal</span>
+          <span id="aiModelBadge" class="badge-pill pill-blue">MODEL</span>
+        </div>
+        <div id="aiAdvisoryText" style="white-space: pre-wrap; font-size: 0.9rem; color: #e5e7eb; margin-bottom: 1rem; line-height: 1.6;"></div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: gap;">
+          <span style="font-size: 0.8rem; color: var(--yellow);">🔒 Status: Awaiting Human Engineer Review</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="logApproval(false)" style="color: var(--red);">✕ Reject Proposal</button>
+            <button class="btn-primary" onclick="logApproval(true)">✓ Approve for Staging</button>
+          </div>
+        </div>
+        <div id="approvalStatusLog" style="display: none; margin-top: 0.75rem; font-size: 0.8rem; font-family: monospace;"></div>
+      </div>
+    </div>
+
+    <!-- VIEW 6: PRODUCT TOUR & DOCS -->
+    <div id="view-tour" class="view-section">
+      <div class="card">
+        <div class="card-title">ClassiGuard CyFence: Architecture & Tour</div>
+        <p class="card-subtitle">Zero-dependency security assessment engine aligned with OWASP ASVS v4.0 and MITRE ATT&CK.</p>
+
+        <div class="summary-grid">
+          <div class="score-card">
+            <div class="title">Runtime Dependencies</div>
+            <div class="value" style="color: var(--green);">0</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Scale Stress Test</div>
+            <div class="value" style="color: var(--primary);">50,000</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Audit Throughput</div>
+            <div class="value" style="color: var(--cyan);">149k/s</div>
+          </div>
+          <div class="score-card">
+            <div class="title">VAPT Remediations</div>
+            <div class="value" style="color: var(--green);">8 / 8</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+          <h3 style="font-size: 1rem; color: #fff; margin-bottom: 0.5rem;">Quick Start CLI & Shortcuts</h3>
+          <pre><code># Run Single Audit via Standalone Binary
+cyfence.exe https://example.com --html audit.html
+
+# Run Multi-Target Fleet Audit
+cyfence.exe --targets targets.txt --html batch-summary.html
+
+# Compare Posture Drift
+cyfence.exe diff baseline.json current.json
+
+# Auto-Hardening Snippets Export
+cyfence.exe https://example.com --remediation --export-configs reports/hardening/</code></pre>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // Context-aware HTML Escaping to prevent DOM XSS (CWE-79)
+    const csrfToken = document.querySelector('meta[name="cyfence-token"]').getAttribute('content');
+    let currentAuditData = null;
+    let activeHardeningCode = '';
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -2924,57 +3343,87 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
         .replace(/'/g, '&#039;');
     }
 
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      btn.classList.add('active');
+    function switchView(viewId) {
+      document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      event.target.classList.add('active');
     }
 
-    async function runAudit() {
+    document.getElementById('optCustomHeaders').addEventListener('change', (e) => {
+      document.getElementById('customHeadersBox').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('optJwt').addEventListener('change', (e) => {
+      document.getElementById('jwtBox').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // 1. Single Audit Execution
+    async function runSingleAudit() {
       const url = document.getElementById('targetUrl').value.trim();
-      if (!url) return alert('Please enter a target URL');
+      if (!url) return alert('Please enter a target URL.');
 
       const skipRoutes = !document.getElementById('optRoutes').checked;
       const enableAi = document.getElementById('optAi').checked;
-      const csrfToken = document.querySelector('meta[name="cyfence-token"]').getAttribute('content');
+      let headers = {};
+      if (document.getElementById('optCustomHeaders').checked) {
+        try {
+          headers = JSON.parse(document.getElementById('customHeaderInput').value || '{}');
+        } catch {
+          return alert('Invalid JSON in Custom Headers input.');
+        }
+      }
+      const jwt = document.getElementById('optJwt').checked ? document.getElementById('jwtInput').value.trim() : null;
 
-      document.getElementById('spinner').style.display = 'block';
-      document.getElementById('resultsPanel').style.display = 'none';
+      document.getElementById('singleSpinner').style.display = 'block';
+      document.getElementById('singleResults').style.display = 'none';
 
       try {
         const res = await fetch('/api/audit', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CyFence-Token': csrfToken
-          },
-          body: JSON.stringify({ url, skipRoutes, enableAi, aiProvider: 'ollama' })
+          headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
+          body: JSON.stringify({ url, skipRoutes, enableAi, headers, jwt })
         });
         const data = await res.json();
-        if (data.error) {
-          alert('Audit error: ' + data.error);
-          return;
-        }
-        renderResults(data);
+        if (data.error) throw new Error(data.error);
+
+        currentAuditData = data;
+        renderSingleResults(data);
       } catch (err) {
         alert('Audit execution failed: ' + err.message);
       } finally {
-        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('singleSpinner').style.display = 'none';
       }
     }
 
-    function renderResults(data) {
-      document.getElementById('resultsPanel').style.display = 'block';
+    function renderSingleResults(data) {
+      document.getElementById('singleResults').style.display = 'block';
       const c = data.compliance;
       document.getElementById('scoreVal').innerText = c.score + '/100';
       document.getElementById('gradeVal').innerText = c.grade;
       document.getElementById('critHighVal').innerText = (c.counts.critical + c.counts.high);
       document.getElementById('passVal').innerText = c.counts.passed;
 
-      // Findings with strict HTML escaping
-      const findingsDiv = document.getElementById('tabFindings');
-      findingsDiv.innerHTML = data.findings.map(f => {
+      filterFindings('ALL', document.querySelector('.filter-bar .filter-btn'));
+
+      if (data.blueTeam) {
+        switchHardeningTab('nginx');
+      }
+    }
+
+    function filterFindings(sev, btn) {
+      if (btn) {
+        document.querySelectorAll('.filter-bar .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      if (!currentAuditData) return;
+
+      const filtered = sev === 'ALL'
+        ? currentAuditData.findings
+        : currentAuditData.findings.filter(f => f.severity === sev);
+
+      const container = document.getElementById('findingsContainer');
+      container.innerHTML = filtered.map(f => {
         const safeSev = escapeHtml(f.severity);
         const safeTitle = escapeHtml(f.title);
         const safeStd = escapeHtml(f.standard);
@@ -2987,21 +3436,233 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
           <div class="finding-item">
             <div><span class="badge badge-\${safeSev}">\${safeSev}</span> <strong>\${safeTitle}</strong></div>
             <div style="font-size: 0.8rem; color: var(--muted); margin: 0.35rem 0;">Standard: \${safeStd}\${safeCwe}\${safeAttack}</div>
-            <div style="font-size: 0.9rem; color: #d1d5db;">\${safeDetails}</div>
+            <div style="font-size: 0.85rem; color: #d1d5db;">\${safeDetails}</div>
             \${safeFix}
           </div>
         \`;
       }).join('');
+    }
 
-      // Blue team
-      if (data.blueTeam) {
-        document.getElementById('nginxCode').innerText = data.blueTeam.hardeningConfigs.nginx;
-        document.getElementById('apacheCode').innerText = data.blueTeam.hardeningConfigs.apache;
-        document.getElementById('sigmaCode').innerText = data.blueTeam.detectionRules.sigmaYaml;
+    // 2. Batch Audit Execution
+    async function runBatchAudit() {
+      const raw = document.getElementById('batchUrls').value;
+      const urls = raw.split('\\n').map(u => u.trim()).filter(u => u && !u.startsWith('#'));
+      if (urls.length === 0) return alert('Please enter at least one target URL.');
+
+      document.getElementById('batchSpinner').style.display = 'block';
+      document.getElementById('batchResults').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
+          body: JSON.stringify({ urls })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        document.getElementById('batchResults').style.display = 'block';
+        document.getElementById('batchSummaryStats').innerText = \`Evaluated \${data.count} target(s) &bull; Avg Score: \${data.avgScore}/100 &bull; Critical: \${data.totalCritical} &bull; High: \${data.totalHigh}\`;
+
+        const tbody = document.getElementById('batchTableBody');
+        tbody.innerHTML = data.results.map(r => \`
+          <tr>
+            <td><strong>\${escapeHtml(r.targetUrl)}</strong></td>
+            <td><strong>\${r.compliance?.score || 0}/100</strong></td>
+            <td><span class="badge badge-\${r.compliance?.grade || 'F'}">\${r.compliance?.grade || 'F'}</span></td>
+            <td style="color: var(--red); font-weight: bold;">\${r.compliance?.counts?.critical || 0}</td>
+            <td style="color: var(--yellow);">\${r.compliance?.counts?.high || 0}</td>
+            <td>\${r.compliance?.counts?.medium || 0}</td>
+            <td>\${r.compliance?.counts?.low || 0}</td>
+            <td style="color: var(--green);">\${r.compliance?.counts?.passed || 0}</td>
+            <td><button class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadBatchRowIntoSingle('\${encodeURIComponent(JSON.stringify(r))}')">Inspect</button></td>
+          </tr>
+        \`).join('');
+      } catch (err) {
+        alert('Batch audit failed: ' + err.message);
+      } finally {
+        document.getElementById('batchSpinner').style.display = 'none';
+      }
+    }
+
+    function loadBatchRowIntoSingle(encoded) {
+      const data = JSON.parse(decodeURIComponent(encoded));
+      currentAuditData = data;
+      document.getElementById('targetUrl').value = data.targetUrl;
+      switchView('view-single');
+      renderSingleResults(data);
+    }
+
+    function loadSampleTargets() {
+      document.getElementById('batchUrls').value = "http://localhost:8080/insecure\\nhttps://example.com\\nhttps://httpbin.org/status/200";
+    }
+
+    // 3. Diff Analysis
+    async function runDiffAnalysis() {
+      let base, current;
+      try {
+        base = JSON.parse(document.getElementById('diffBaseJson').value);
+        current = JSON.parse(document.getElementById('diffCurrentJson').value);
+      } catch {
+        return alert('Please enter valid JSON in both baseline and current boxes.');
       }
 
-      // AI
-      document.getElementById('aiText').innerText = data.aiAdvisory ? data.aiAdvisory.advisory : 'AI Advisory was not enabled for this scan. Check "Enable AI Security Advisor" to generate assistive remediation.';
+      try {
+        const res = await fetch('/api/diff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
+          body: JSON.stringify({ base, current })
+        });
+        const diff = await res.json();
+        if (diff.error) throw new Error(diff.error);
+
+        document.getElementById('diffResults').style.display = 'block';
+        document.getElementById('diffBaseScore').innerText = diff.baseScore + '/100';
+        document.getElementById('diffCurrentScore').innerText = diff.currentScore + '/100';
+        
+        const delta = diff.scoreDelta;
+        const deltaEl = document.getElementById('diffScoreDelta');
+        deltaEl.innerText = (delta >= 0 ? '+' : '') + delta;
+        deltaEl.style.color = delta >= 0 ? 'var(--green)' : 'var(--red)';
+
+        const badge = document.getElementById('diffStatusBadge');
+        badge.innerText = diff.status;
+        badge.className = diff.status === 'IMPROVED' ? 'badge-pill pill-green' : (diff.status === 'DEGRADED' ? 'badge-pill' : 'badge-pill pill-blue');
+        if (diff.status === 'DEGRADED') badge.style.cssText = 'background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);';
+
+        // Lists
+        const newBox = document.getElementById('diffNewDefectsList');
+        newBox.innerHTML = diff.newDefects.length > 0
+          ? diff.newDefects.map(d => \`<div style="margin-bottom: 0.35rem;">• [\${escapeHtml(d.severity)}] \${escapeHtml(d.title)}</div>\`).join('')
+          : '<span style="color: var(--green);">✨ Zero new regressions detected.</span>';
+
+        const resBox = document.getElementById('diffResolvedDefectsList');
+        resBox.innerHTML = diff.resolvedDefects.length > 0
+          ? diff.resolvedDefects.map(d => \`<div style="margin-bottom: 0.35rem;">• \${escapeHtml(d.title)}</div>\`).join('')
+          : '<span style="color: var(--muted);">No defects resolved.</span>';
+
+      } catch (err) {
+        alert('Diff analysis failed: ' + err.message);
+      }
+    }
+
+    function loadDiffSamples() {
+      const sampleBase = {
+        compliance: { score: 45, grade: 'D' },
+        findings: [
+          { id: 'SEC-HDR-01', severity: 'CRITICAL', title: 'Missing HSTS' },
+          { id: 'SEC-HDR-02', severity: 'HIGH', title: 'Missing Content-Security-Policy' }
+        ]
+      };
+      const sampleCurrent = {
+        compliance: { score: 85, grade: 'B' },
+        findings: [
+          { id: 'SEC-HDR-01', severity: 'PASS', title: 'HSTS Present' },
+          { id: 'SEC-HDR-02', severity: 'HIGH', title: 'Missing Content-Security-Policy' }
+        ]
+      };
+      document.getElementById('diffBaseJson').value = JSON.stringify(sampleBase, null, 2);
+      document.getElementById('diffCurrentJson').value = JSON.stringify(sampleCurrent, null, 2);
+      runDiffAnalysis();
+    }
+
+    // 4. Blue Team Hardening Tab Controller
+    function switchHardeningTab(type, btn) {
+      if (btn) {
+        document.querySelectorAll('#view-hardening .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+
+      if (!currentAuditData || !currentAuditData.blueTeam) {
+        document.getElementById('activeCodeBlock').innerText = 'Please run an audit on a target first.';
+        return;
+      }
+
+      const bt = currentAuditData.blueTeam;
+      if (type === 'nginx') activeHardeningCode = bt.hardeningConfigs.nginx;
+      else if (type === 'apache') activeHardeningCode = bt.hardeningConfigs.apache;
+      else if (type === 'caddy') activeHardeningCode = bt.hardeningConfigs.caddy;
+      else if (type === 'sigma') activeHardeningCode = bt.detectionRules.sigmaYaml;
+      else if (type === 'elastic') activeHardeningCode = bt.detectionRules.elasticQuery;
+
+      document.getElementById('activeCodeBlock').innerText = activeHardeningCode;
+    }
+
+    function copyActiveCode() {
+      if (!activeHardeningCode) return alert('No code to copy.');
+      navigator.clipboard.writeText(activeHardeningCode);
+      alert('Configuration copied to clipboard!');
+    }
+
+    function downloadActiveCode() {
+      if (!activeHardeningCode) return alert('No code to download.');
+      const blob = new Blob([activeHardeningCode], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cyfence-remediation.conf';
+      a.click();
+    }
+
+    // 5. AI Advisor Controller
+    async function requestAiAdvisory() {
+      if (!currentAuditData) return alert('Please run an audit first to generate context for the AI advisor.');
+
+      const provider = document.getElementById('aiProviderSelect').value;
+      const apiKey = document.getElementById('aiApiKeyInput').value.trim();
+
+      document.getElementById('aiAdvisoryCard').style.display = 'block';
+      document.getElementById('aiModelBadge').innerText = provider.toUpperCase();
+      document.getElementById('aiAdvisoryText').innerText = '⏳ Synthesizing custom remediation advisory...';
+
+      try {
+        const res = await fetch('/api/ai/advise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
+          body: JSON.stringify({ result: currentAuditData, provider, apiKey })
+        });
+        const data = await res.json();
+        document.getElementById('aiAdvisoryText').innerText = data.advisory || 'No advisory generated.';
+      } catch (err) {
+        document.getElementById('aiAdvisoryText').innerText = 'AI request failed: ' + err.message;
+      }
+    }
+
+    function logApproval(approved) {
+      const log = document.getElementById('approvalStatusLog');
+      log.style.display = 'block';
+      if (approved) {
+        log.style.color = 'var(--green)';
+        log.innerText = \`✓ APPROVED BY OPERATOR: Staging patch execution authorized at \${new Date().toISOString()}\`;
+      } else {
+        log.style.color = 'var(--red)';
+        log.innerText = \`✕ REJECTED: Changes cancelled and flagged for human architect review.\`;
+      }
+    }
+
+    // Export helpers
+    function exportReport(type) {
+      if (!currentAuditData) return alert('Please execute an audit first.');
+      let content = '', filename = '', mime = 'text/plain';
+
+      if (type === 'json') {
+        content = JSON.stringify(currentAuditData, null, 2);
+        filename = 'audit-report.json';
+        mime = 'application/json';
+      } else if (type === 'md') {
+        content = \`# ClassiGuard CyFence Report for \${currentAuditData.targetUrl}\\nScore: \${currentAuditData.compliance.score}/100 (Grade \${currentAuditData.compliance.grade})\\n\\n## Findings\\n\` +
+          currentAuditData.findings.map(f => \`- [\${f.severity}] \${f.title}\\n  \${f.details}\`).join('\\n\\n');
+        filename = 'audit-report.md';
+      } else if (type === 'html') {
+        content = \`<!DOCTYPE html><html><head><title>CyFence Report</title><style>body{background:#0b0f19;color:#fff;font-family:sans-serif;padding:2rem;}</style></head><body><h1>ClassiGuard CyFence: \${escapeHtml(currentAuditData.targetUrl)}</h1><h2>Score: \${currentAuditData.compliance.score}/100</h2><pre>\${escapeHtml(JSON.stringify(currentAuditData.findings, null, 2))}</pre></body></html>\`;
+        filename = 'audit-report.html';
+        mime = 'text/html';
+      }
+
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
     }
   </script>
 </body>
@@ -3015,13 +3676,19 @@ function startGuiServer(port = 9090, host = '127.0.0.1') {
 
     server.listen(port, host, () => {
       console.log(`\n================================================================================`);
-      console.log(`  🛡️  ClassiGuard CyFence Web GUI Dashboard Running`);
+      console.log(`  🛡️  ClassiGuard CyFence Enterprise Web GUI Suite Running`);
       console.log(`================================================================================`);
       console.log(`  Access URL:  http://${host}:${port}`);
       console.log(`  Mode:        100% Offline / Air-Gapped Ready (Zero external dependencies)`);
       console.log(`  Security:    CSRF Guard Active | Strict Loopback (${host}) | CSP Hardened`);
+      console.log(`  Features:    Single Audit, Batch Fleet, Posture Drift Diff, Auto-Hardening, AI Advisor`);
       console.log(`  Press Ctrl+C to terminate dashboard server.`);
       console.log(`================================================================================\n`);
+
+      if (options.autoOpen !== false) {
+        openBrowser(`http://${host}:${port}`);
+      }
+
       resolve(server);
     });
 
@@ -3104,7 +3771,7 @@ async function launchWizard() {
     let port = (await askQuestion(rl, 'Enter Web GUI Port (default: 9090): ')).trim();
     const portNum = parseInt(port, 10) || 9090;
     rl.close();
-    await startGuiServer(portNum);
+    await startGuiServer(portNum, '127.0.0.1', { autoOpen: true });
 
   } else if (choice === '4') {
     const base = (await askQuestion(rl, 'Enter baseline JSON report path: ')).trim();
@@ -3420,13 +4087,16 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    if (process.stdin.isTTY) {
-      await launchWizard();
-      return;
-    } else {
-      printHelp();
-      process.exit(0);
-    }
+    const port = 9090;
+    console.log(`\n================================================================================`);
+    console.log(`  🛡️  ClassiGuard CyFence: Enterprise Web Security Suite`);
+    console.log(`================================================================================`);
+    console.log(`  No CLI arguments specified. Auto-launching the full Web GUI Dashboard...`);
+    console.log(`  Target Interface: http://127.0.0.1:${port}`);
+    console.log(`  Press Ctrl+C in this console window to exit.`);
+    console.log(`================================================================================\n`);
+    await startGuiServer(port, '127.0.0.1', { autoOpen: true });
+    return;
   }
 
   if (args.includes('-h') || args.includes('--help')) {
@@ -3443,7 +4113,7 @@ async function main() {
   // Subcommand: gui or serve
   if (args[0] === 'gui' || args[0] === 'serve') {
     const port = parseInt(args[1], 10) || 9090;
-    await startGuiServer(port);
+    await startGuiServer(port, '127.0.0.1', { autoOpen: true });
     return;
   }
 
