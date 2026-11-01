@@ -16,7 +16,10 @@ reports/
 # Exclude internal build intermediates
 *.blob
 dist/sea-prep.blob
+dist/bundle.cjs
 dist/linux/
+package.json
+sea-config.json
 *.log
 node_modules/
 

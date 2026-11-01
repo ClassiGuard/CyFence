@@ -1,7 +1,7 @@
 # 🛡️ ClassiGuard CyFence
 
-> **Enterprise Defensive Web Security Posture & Compliance Suite**  
-> *Single Standalone Executable • One-Click Web GUI • Zero External Dependencies • Offline & Air-Gapped Ready • AI-Assisted with Mandatory Human Approval*
+> **Enterprise Offensive & Defensive Web Security Posture & Compliance Suite**  
+> *Single Self-Contained Executable (`cyfence.exe`) • Zero Runtime Dependencies • Native Desktop Application Window • 100% Offline & Air-Gapped Ready • BYOK AI Engine with Mandatory Human Approval*
 
 ---
 
@@ -18,105 +18,85 @@
 
 ---
 
-## 🌟 How to Install & Run ClassiGuard CyFence
+## 🌟 Instant Quickstart: Single Executable (`dist/cyfence.exe`)
 
-ClassiGuard CyFence is packaged as a **single, self-contained standalone executable** and includes an automated **1-Click Windows Desktop Installer**. You do **not** need to install Node.js, configure dependencies, or run complex terminal commands.
-
-### 🚀 Option A: 1-Click Windows Desktop Installation (Recommended)
-
-To install CyFence like a standard desktop application with a Desktop Icon and **ZERO background command prompt windows**:
-
-1. Download the release repository or zip.
-2. Double-click **`install.bat`** (or execute `.\install.ps1`).
-3. **What the Installer does automatically:**
-   * Installs application files to `%LOCALAPPDATA%\Programs\ClassiGuard-CyFence\`.
-   * Creates a **Desktop Shortcut** named `ClassiGuard CyFence.lnk`.
-   * Creates a **Start Menu Shortcut** in Windows Programs.
-   * Configures the **Silent Background Launcher** (`cyfence-desktop.vbs`), ensuring **NO black command prompt window pop-up appears**.
-   * Adds `cyfence` to your user `PATH` for convenience.
-   * Generates a clean 1-click **`uninstall.bat`**.
-
----
-
-### 🚀 Option B: Portable Standalone Executable (Double-Click)
+ClassiGuard CyFence is delivered as a **single, self-contained standalone binary with zero external dependencies**. No Node.js runtime, no Python, no external libraries, and no installers are required on the target machine.
 
 ```
                ┌────────────────────────────────────────────────────────┐
                │                  DOWNLOAD & DOUBLE-CLICK               │
-               │               cyfence.exe (or install.bat)             │
+               │                      dist/cyfence.exe                  │
                └───────────────────────────┬────────────────────────────┘
                                            │
                                            ▼
                ┌────────────────────────────────────────────────────────┐
                │           AUTOMATIC DESKTOP GUI INITIALIZATION         │
-               │  • Background server starts on http://127.0.0.1:9090   │
+               │  • Background server binds http://127.0.0.1:9090       │
                │  • Dedicated Desktop Window launches (Edge/Chrome App) │
-               │  • Real Host Network IP & Loopback interfaces active   │
-               │  • Dynamic port failover & single-instance management  │
+               │  • Displays Real Host LAN/Wi-Fi IP alongside Loopback  │
+               │  • Zero-configuration, zero setup, single executable   │
                └───────────────────────────┬────────────────────────────┘
                                            │
                                            ▼
                ┌────────────────────────────────────────────────────────┐
                │       DEEP RED TEAM VAPT & POSTURE DEFENSE SUITE       │
-               │  Active SQLi, XSS, SSRF, LFI, GraphQL & ASVS v4.0      │
+               │  Active SQLi, XSS, SSRF, LFI, OpenAPI, AI & ASVS v4.0  │
                └────────────────────────────────────────────────────────┘
 ```
 
-1. **Download the Executable**:
-   * Windows: Download **[`dist/cyfence.exe`](dist/cyfence.exe)**
-   * Linux: Download **[`dist/classiguard-cyfence-linux.tar.gz`](dist/classiguard-cyfence-linux.tar.gz)**
-2. **Launch the Application**:
-   * **Windows Desktop:** Simply double-click your **ClassiGuard CyFence** Desktop icon, or double-click `cyfence.exe`.
-   * **Linux:** Extract the archive and execute `./cyfence`.
-3. **Standard Desktop App Experience**:
-   * CyFence immediately starts its embedded, air-gapped server and **automatically opens a dedicated, frameless desktop application window** (Edge/Chrome App Mode with no browser tabs, no URL bar, and dedicated Windows taskbar grouping).
-   * **Dynamic Port Failover:** If port 9090 is in use, CyFence dynamically finds the next available port (9091, 9092, etc.) so it never crashes.
-   * **Single-Instance Protection:** Launching `cyfence.exe` a second time brings the existing desktop window into focus instead of creating duplicate background processes.
-   * **Zero-Console Silent Mode:** When launched via the Desktop shortcut or `cyfence-desktop.vbs`, the application runs completely headless in the background without any CMD pop-up window.
+### 🚀 Running the Desktop Application
+1. Download **[`dist/cyfence.exe`](dist/cyfence.exe)**.
+2. Double-click `cyfence.exe`.
+3. **What happens automatically:**
+   * CyFence immediately starts its secure local air-gapped security engine on `127.0.0.1:9090`.
+   * CyFence opens a **native desktop application window** (Edge/Chrome standalone app mode with zero browser tabs and no URL bar).
+   * **Dynamic Port Failover:** If port 9090 is in use, CyFence dynamically binds the next available port (9091, 9092, etc.).
+   * **Single-Instance Management:** Launching `cyfence.exe` a second time brings the existing desktop window into focus instead of creating duplicate background processes.
+   * **Clean Exit:** Click the **✕ Exit Application** button in the top navigation bar to stop the local engine and close the app cleanly.
 
 ---
 
 ## 🖥️ Complete Application Feature Tour (In the Web GUI)
 
-Every capability of the engine is accessible directly through the visual tabs:
+Every capability of the security engine is accessible directly through the visual tabs:
 
-### 1. 🚀 Deep Red Team VAPT & Single Target Audit
+### 1. 🚀 Single Target Audit & Deep Red Team VAPT
 * **Scan Profile Selector**:
-  * 🔴 **Deep Red Team VAPT (Full Injections)**: Active recursive HTML crawling, SQL Injection fuzzing (15+ DB error signatures), Reflected XSS probing, Local File Inclusion (LFI / Path Traversal), Open Redirection, and GraphQL Introspection.
-  * 🛡️ **Standard ASVS Audit**: Full OWASP ASVS v4.0 baseline across 50+ sensitive metadata paths, CORS policies, JWT compliance (RFC 8725), and HTTP verb tampering.
-  * ⚡ **Quick Recon**: High-speed perimeter verification and TLS headers.
+  * 🔴 **Deep Red Team VAPT (Full Injections)** *(Default)*: Active recursive spidering, SQL Injection fuzzing across 15+ database signatures (MySQL, PostgreSQL, SQLite, MSSQL, Oracle), Reflected XSS probing, Local File Inclusion (LFI / Path Traversal), Cloud Metadata SSRF (`169.254.169.254`), Open Redirects, and GraphQL Introspection.
+  * 🛡️ **Standard ASVS Audit**: Full OWASP ASVS v4.0 baseline across 50+ sensitive metadata paths (`.env`, `.git/config`, `actuator/heapdump`, `backup.sql`, `docker-compose.yml`), CORS policies, and RFC 8725 JWT compliance.
+  * ⚡ **Quick Recon**: Rapid perimeter verification, TLS cipher suites, and security headers.
 * **Interactive Multi-Stage Progress Stepper**:
-  * Visual 5-phase tracker: `① Recon & TLS` $\rightarrow$ `② Endpoint Spider` $\rightarrow$ `③ Active Injections` $\rightarrow$ `④ API & GraphQL` $\rightarrow$ `⑤ Posture Grading`.
+  * Real-time 5-phase visual stepper: `① Recon & TLS` $\rightarrow$ `② Endpoint Spider` $\rightarrow$ `③ Active Injections` $\rightarrow$ `④ API & GraphQL` $\rightarrow$ `⑤ Posture Grading`.
 * **Live Cyber Streaming Console**:
-  * Real-time dark-mode terminal showing every probe, URL parameter, and payload evaluation as it happens.
+  * Real-time dark-mode terminal streaming every probe, injected payload, and parameter evaluation via Server-Sent Events.
 * **Exploit Proof-of-Concept (PoC) Drawers**:
   * Every confirmed injection finding includes a detailed **PoC Box** containing the vulnerable parameter, injected payload, database engine detected, raw response snippet evidence, and reproducible URL.
 * **Instant Report Exports**:
-  * Export visual, styled **HTML Reports**, machine-readable **JSON**, or GitHub-flavored **Markdown**.
+  * Export visual **HTML Reports**, machine-readable **JSON**, or GitHub-flavored **Markdown** with 1 click.
 
 ### 2. 🔌 Custom API & Network Engine
+* **Host Network Adapter Inspector**:
+  * Inspects your machine's network interfaces and surfaces your real host network IP (e.g. `192.168.x.x` or `10.x.x.x`) alongside the secure loopback (`127.0.0.1`), with 1-click IP copy buttons.
 * **Custom REST API & OpenAPI Tester**:
   * Ingest any **OpenAPI 3.0 / Swagger specification** via live URL or paste raw JSON/YAML.
-  * Automatically extracts endpoints, HTTP methods, and parameter definitions ready for fleet fuzzing.
-* **Host Network Adapter Inspector**:
-  * Displays all active IPv4 network adapters on your host machine (e.g. `Wi-Fi: 192.168.x.x`, `Ethernet: 10.x.x.x`, `Loopback: 127.0.0.1`) with 1-click IP copy buttons.
+  * Automatically extracts endpoints, HTTP methods, and parameter definitions ready for penetration fuzzing.
 * **Bring Your Own AI API (BYOK)**:
   * Configure your own **OpenAI**, **Anthropic Claude**, **Google Gemini**, or **Ollama** API keys, custom models, and endpoints.
-  * Test AI connectivity live with the built-in diagnostic test button. Settings persist securely in local storage.
+  * Test AI connectivity live with the built-in diagnostic test button.
 
-### 2. 📋 Multi-Target Fleet Batch Auditing
+### 3. 📋 Multi-Target Fleet Batch Auditing
 * **No text files needed**: Paste multiple URLs directly into the browser text area (or click **Load Sample Targets**).
 * Click **Launch Fleet Batch Audit**.
-* Watch the **real-time progress bar** and view the **Fleet Summary Matrix** comparing scores, grades (A–F), and defect counts.
+* Watch the **real-time progress bar** and view the **Fleet Summary Matrix** comparing scores, grades (A–F), and defect counts across your infrastructure.
 * Click **Inspect** on any target row to immediately view its detailed findings.
 
-### 3. ⚖️ Configuration Drift & Regression (Diff Engine)
+### 4. ⚖️ Configuration Drift & Regression (Diff Engine)
 * Paste baseline and current audit results into side-by-side text boxes (or click **Load Sample Baseline & Current**).
 * Click **Compare Audits**.
 * Instantly view the **Score Delta Badge** (e.g., `+30 Points (IMPROVED)` or `-15 Points (DEGRADED)`).
 * Inspect the **New Vulnerabilities** list to catch regressions and the **Resolved Vulnerabilities** list to verify fixes.
 
-### 4. 🛡️ Blue Team Auto-Remediation & SIEM Exporter
+### 5. 🛡️ Blue Team Auto-Remediation & SIEM Exporter
 * Automatically generates tailored configuration snippets based on audit findings:
   * **Nginx**: Ready-to-paste reverse proxy security headers and dotfile block rules.
   * **Apache**: `.htaccess` / `httpd.conf` defensive directives.
@@ -125,7 +105,7 @@ Every capability of the engine is accessible directly through the visual tabs:
   * **Elasticsearch Query DSL**: Ready-to-use search query for SOC alerting.
 * Click **📋 Copy** to copy configurations to clipboard, or click **💾 Download** to save `.conf` / `.yml` files to disk.
 
-### 5. 🤖 AI Security Advisor (Human Approval Mandatory)
+### 6. 🤖 AI Security Advisor (Human Approval Mandatory)
 * Choose your preferred AI engine:
   * **Ollama (100% Offline / Local Air-Gapped Llama 3)**
   * **Anthropic Claude (claude-3-5-sonnet)**
@@ -133,8 +113,8 @@ Every capability of the engine is accessible directly through the visual tabs:
 * Click **Synthesize AI Remediation Advisory**.
 * **Strict Human-in-the-Loop Workflow**: Review the AI proposal and click **✓ Approve for Staging** or **✕ Reject Proposal**. All approvals are logged to an audit trail with timestamps.
 
-### 6. 📖 Interactive Architecture Tour & Reference
-* Integrated guide displaying OWASP ASVS v4.0 mapping, ATT&CK/D3FEND technique alignment, 50,000 node benchmark metrics, and the 8/8 VAPT security verification checklist.
+### 7. 📖 Architecture & Product Tour
+* Interactive guide displaying OWASP ASVS v4.0 mapping, ATT&CK/D3FEND technique alignment, 50,000 node benchmark metrics, and the 8/8 VAPT security verification checklist.
 
 ---
 
@@ -143,9 +123,9 @@ Every capability of the engine is accessible directly through the visual tabs:
 ClassiGuard CyFence includes a built-in stress-tested audit engine verified against 50,000 synthetic enterprise machines:
 
 * **Total Nodes Audited**: 50,000 machines
-* **Execution Time**: **~0.33 seconds** (334.76 ms)
-* **Throughput**: **~149,300 machines / second**
-* **Memory Stability**: Peak heap of **9.95 MB** (+4.23 MB delta, zero memory leaks, clean V8 garbage collection)
+* **Execution Time**: **~0.36 seconds** (359.50 ms)
+* **Throughput**: **~139,000 machines / second**
+* **Memory Stability**: Peak heap of **8.27 MB** (+2.55 MB delta, zero memory leaks, clean V8 garbage collection)
 * **Fleet Posture Profile**:
   * Grade A (Hardened Baseline): 10,000 (20.0%)
   * Grade B (Minor Gaps): 10,000 (20.0%)
@@ -155,18 +135,15 @@ ClassiGuard CyFence includes a built-in stress-tested audit engine verified agai
 
 ---
 
-## 📁 Standalone Packages Available in `dist/`
+## 📁 Executable Artifact
 
-* **`dist/cyfence.exe`**: Pre-compiled standalone Windows executable (~89.8 MB). Simply double-click to run!
-* **`dist/classiguard-cyfence.exe`**: Full-name standalone Windows executable.
-* **`dist/classiguard-cyfence-linux.tar.gz`**: Standalone Linux distribution archive (~38 KB).
-* **`dist/bundle.cjs`**: Universal single-file distribution (~135 KB).
+* **`dist/cyfence.exe`**: Pre-compiled single standalone Windows executable (~89.8 MB). Simply double-click to launch!
 
 ---
 
-## 🔌 Optional CI/CD Automation (Headless Mode)
+## 🔌 Optional CI/CD Automation (Headless CLI Mode)
 
-For automated DevOps pipelines, Jenkins, and GitHub Actions where no graphical browser is present, passing arguments directly to `cyfence.exe` executes in headless mode:
+For automated DevOps pipelines, Jenkins, and GitHub Actions where no graphical browser is present, passing arguments directly to `cyfence.exe` executes in headless CLI mode:
 
 ```bash
 # Automated CI/CD quality gate (exits with code 1 if score is below 80)
@@ -176,7 +153,7 @@ cyfence.exe https://staging.example.corp --min-score 80 --json report.json
 cyfence.exe --targets targets.txt --html batch-report.html
 ```
 
-*(If no arguments are provided, CyFence automatically launches the Web GUI suite).*
+*(If executed without arguments, CyFence automatically launches the Desktop Application).*
 
 ---
 
