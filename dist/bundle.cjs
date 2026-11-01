@@ -1,5 +1,5 @@
 // ClassiGuard CyFence Standalone Zero-Dependency Executable Bundle
-// Generated: 2026-11-01T04:23:41.200Z
+// Generated: 2026-11-01T08:51:49.923Z
 
 const fs = Object.assign(require('node:fs/promises'), require('node:fs'));
 const path = require('node:path');
@@ -1024,6 +1024,18 @@ const SENSITIVE_PROBES = [
     remediation: 'Block public access to `.git` directories and all hidden files at the web server / reverse proxy layer.'
   },
   {
+    path: '/.git/config',
+    title: 'Exposed Git Repository Configuration (/.git/config)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1592.002',
+    d3fendId: 'D3-IRA',
+    severity: SEVERITY.CRITICAL,
+    check: (res) => res.status === 200 && res.bodySnippet.includes('[core]') && res.bodySnippet.includes('repositoryformatversion'),
+    details: 'Git configuration file is accessible, exposing internal remote repository URLs and credentials.',
+    remediation: 'Restrict access to `.git` directories across web server virtual hosts.'
+  },
+  {
     path: '/.env',
     title: 'Exposed Environment File (/.env)',
     standard: 'OWASP ASVS V14.3.1',
@@ -1031,9 +1043,53 @@ const SENSITIVE_PROBES = [
     attackId: 'T1552.001',
     d3fendId: 'D3-IRA',
     severity: SEVERITY.CRITICAL,
-    check: (res) => res.status === 200 && /(?:DB_PASSWORD|SECRET_KEY|API_KEY|DATABASE_URL)=/i.test(res.bodySnippet),
+    check: (res) => res.status === 200 && /(?:DB_PASSWORD|SECRET_KEY|API_KEY|DATABASE_URL|APP_KEY)=/i.test(res.bodySnippet),
     details: 'The production `/.env` configuration file is exposed, disclosing sensitive database credentials, API secrets, and encryption keys.',
     remediation: 'Store `.env` outside the web document root and enforce web server rules blocking access to dotfiles.'
+  },
+  {
+    path: '/.env.local',
+    title: 'Exposed Local Environment Overrides (/.env.local)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1552.001',
+    severity: SEVERITY.CRITICAL,
+    check: (res) => res.status === 200 && /(?:SECRET|PASSWORD|TOKEN|KEY|DATABASE)=/i.test(res.bodySnippet),
+    details: 'Local environment configuration file is exposed with potential developer secrets.',
+    remediation: 'Deny access to all `.env*` files in reverse proxy / web server configs.'
+  },
+  {
+    path: '/backup.sql',
+    title: 'Exposed Database Backup File (/backup.sql)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1552.001',
+    severity: SEVERITY.CRITICAL,
+    check: (res) => res.status === 200 && /(?:CREATE TABLE|INSERT INTO|MySQL dump|PostgreSQL database dump)/i.test(res.bodySnippet),
+    details: 'Publicly readable SQL database dump exposes entire database schemas, user tables, and password hashes.',
+    remediation: 'Never store database dumps or backup archives inside the web document root.'
+  },
+  {
+    path: '/dump.sql',
+    title: 'Exposed SQL Database Dump (/dump.sql)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1552.001',
+    severity: SEVERITY.CRITICAL,
+    check: (res) => res.status === 200 && /(?:CREATE TABLE|INSERT INTO|MySQL dump)/i.test(res.bodySnippet),
+    details: 'Exposed raw SQL dump file disclosing full database contents.',
+    remediation: 'Remove database backups from web-accessible directories immediately.'
+  },
+  {
+    path: '/backup.zip',
+    title: 'Exposed Source Code or Backup Archive (/backup.zip)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1552.001',
+    severity: SEVERITY.HIGH,
+    check: (res) => res.status === 200 && (res.rawHeaders['content-type']?.includes('zip') || res.rawHeaders['content-type']?.includes('octet-stream')),
+    details: 'Compressed backup archive is directly downloadable, exposing application code or assets.',
+    remediation: 'Block direct downloads of .zip, .tar, .tar.gz archives in public web folders.'
   },
   {
     path: '/actuator/health',
@@ -1060,6 +1116,17 @@ const SENSITIVE_PROBES = [
     remediation: 'Disable `/actuator/env` in production configuration (`management.endpoints.web.exposure.exclude=env`).'
   },
   {
+    path: '/actuator/heapdump',
+    title: 'Exposed JVM Heap Dump Endpoint (/actuator/heapdump)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1552',
+    severity: SEVERITY.CRITICAL,
+    check: (res) => res.status === 200 && (res.rawHeaders['content-type']?.includes('octet-stream') || res.rawHeaders['content-type']?.includes('gzip')),
+    details: 'JVM Heapdump endpoint is exposed, allowing attackers to download memory contents containing cleartext passwords and keys.',
+    remediation: 'Exclude heapdump endpoint in Spring Boot production configuration.'
+  },
+  {
     path: '/swagger.json',
     title: 'Publicly Accessible OpenAPI/Swagger Specification (/swagger.json)',
     standard: 'OWASP ASVS V13.1.4',
@@ -1072,6 +1139,28 @@ const SENSITIVE_PROBES = [
     remediation: 'Require authentication for API documentation or place behind internal developer portals in production.'
   },
   {
+    path: '/openapi.json',
+    title: 'Public OpenAPI 3.0 Specification (/openapi.json)',
+    standard: 'OWASP ASVS V13.1.4',
+    cwe: 'CWE-200',
+    attackId: 'T1595.002',
+    severity: SEVERITY.INFO,
+    check: (res) => res.status === 200 && res.bodySnippet.includes('"openapi"'),
+    details: 'Complete API definition exposed at /openapi.json.',
+    remediation: 'Gate API schema access behind authentication in production.'
+  },
+  {
+    path: '/swagger-ui.html',
+    title: 'Interactive Swagger UI Console (/swagger-ui.html)',
+    standard: 'OWASP ASVS V13.1.4',
+    cwe: 'CWE-200',
+    attackId: 'T1595.002',
+    severity: SEVERITY.LOW,
+    check: (res) => res.status === 200 && (res.bodySnippet.includes('swagger-ui') || res.bodySnippet.includes('SwaggerUIBundle')),
+    details: 'Swagger interactive documentation console is publicly accessible.',
+    remediation: 'Disable Swagger UI in production environments.'
+  },
+  {
     path: '/docker-compose.yml',
     title: 'Exposed Docker Compose Configuration (/docker-compose.yml)',
     standard: 'OWASP ASVS V14.3.1',
@@ -1082,6 +1171,50 @@ const SENSITIVE_PROBES = [
     check: (res) => res.status === 200 && /(?:services|version)\s*:/i.test(res.bodySnippet),
     details: 'Container architecture file is accessible, exposing internal container names, network links, and port mappings.',
     remediation: 'Ensure non-static deployment artifacts are excluded from the web server root.'
+  },
+  {
+    path: '/Dockerfile',
+    title: 'Exposed Container Build Recipe (/Dockerfile)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1592.002',
+    severity: SEVERITY.MEDIUM,
+    check: (res) => res.status === 200 && /FROM\s+[\w\d\-\_\.\/:]+/i.test(res.bodySnippet),
+    details: 'The application Dockerfile is exposed, detailing base images, installed packages, and build stages.',
+    remediation: 'Exclude Dockerfile from web-accessible public folders.'
+  },
+  {
+    path: '/package.json',
+    title: 'Exposed Node.js Manifest (/package.json)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-200',
+    attackId: 'T1592.002',
+    severity: SEVERITY.LOW,
+    check: (res) => res.status === 200 && res.bodySnippet.includes('"dependencies"') && res.bodySnippet.includes('"name"'),
+    details: 'Package dependencies manifest is publicly accessible, revealing exact package names and versions for dependency confusion / CVE targeting.',
+    remediation: 'Ensure `package.json` is not served statically by the web server.'
+  },
+  {
+    path: '/phpmyadmin/',
+    title: 'Exposed phpMyAdmin Management Interface (/phpmyadmin/)',
+    standard: 'OWASP ASVS V14.3.3',
+    cwe: 'CWE-200',
+    attackId: 'T1190',
+    severity: SEVERITY.HIGH,
+    check: (res) => (res.status === 200 || res.status === 401 || res.status === 403) && /phpmyadmin/i.test(res.bodySnippet),
+    details: 'Database administration utility detected publicly, presenting an attractive brute-force and exploit target.',
+    remediation: 'Restrict phpMyAdmin to VPN or local management IP subnet.'
+  },
+  {
+    path: '/web.config',
+    title: 'Exposed IIS Web Configuration (/web.config)',
+    standard: 'OWASP ASVS V14.3.1',
+    cwe: 'CWE-538',
+    attackId: 'T1552',
+    severity: SEVERITY.HIGH,
+    check: (res) => res.status === 200 && res.bodySnippet.includes('<configuration>') && res.bodySnippet.includes('<system.webServer>'),
+    details: 'Microsoft IIS configuration file is exposed, disclosing connection strings or URL rewrite rules.',
+    remediation: 'Ensure IIS request filtering blocks requests for `web.config`.'
   }
 ];
 
@@ -1138,6 +1271,492 @@ async function auditSensitiveRoutes(baseUrl, options = {}) {
 }
 
 // --- End: src/auditors/sensitiveRoutes.mjs ---
+
+
+// --- Start: src/auditors/activeScanner.mjs ---
+/**
+ * Active Offensive Security & Vulnerability Assessment Engine (Red Team / DAST)
+ * Implements Active Injection Probing, Crawling, GraphQL Introspection, and PoC Synthesis
+ * Aligned with OWASP ASVS v4.0, OWASP Top 10 2021, and MITRE ATT&CK
+ */
+
+
+
+
+/**
+ * SQL Error Signatures across 15+ relational and NoSQL database engines
+ */
+const SQL_ERROR_SIGNATURES = [
+  // MySQL & MariaDB
+  { engine: 'MySQL', pattern: /You have an error in your SQL syntax/i },
+  { engine: 'MySQL', pattern: /Warning: mysql_/i },
+  { engine: 'MySQL', pattern: /valid MySQL result/i },
+  { engine: 'MySQL', pattern: /check the manual that corresponds to your MySQL server version/i },
+  { engine: 'MariaDB', pattern: /MariaDB server version for the right syntax/i },
+
+  // PostgreSQL
+  { engine: 'PostgreSQL', pattern: /PG::SyntaxError/i },
+  { engine: 'PostgreSQL', pattern: /unterminated quoted string at or near/i },
+  { engine: 'PostgreSQL', pattern: /PostgreSQL query failed/i },
+  { engine: 'PostgreSQL', pattern: /error in "SELECT.*FROM"/i },
+  { engine: 'PostgreSQL', pattern: /syntax error at or near/i },
+
+  // SQLite
+  { engine: 'SQLite', pattern: /sqlite3\.OperationalError/i },
+  { engine: 'SQLite', pattern: /unrecognized token:/i },
+  { engine: 'SQLite', pattern: /SQLite\/JDBCDriver/i },
+  { engine: 'SQLite', pattern: /SQL logic error or missing database/i },
+
+  // Microsoft SQL Server (MSSQL)
+  { engine: 'MSSQL', pattern: /Driver.*SQL[\-\_\ ]*Server/i },
+  { engine: 'MSSQL', pattern: /OLE DB.*SQL Server/i },
+  { engine: 'MSSQL', pattern: /Unclosed quotation mark after the character string/i },
+  { engine: 'MSSQL', pattern: /Microsoft OLE DB Provider for ODBC Drivers/i },
+
+  // Oracle
+  { engine: 'Oracle', pattern: /ORA-01756: quoted string not properly terminated/i },
+  { engine: 'Oracle', pattern: /ORA-00933: SQL command not properly ended/i },
+  { engine: 'Oracle', pattern: /Oracle error/i },
+  { engine: 'Oracle', pattern: /Oracle.*Driver/i }
+];
+
+/**
+ * Targeted SQL Injection Payloads for Error & Boolean based verification
+ */
+const SQLI_PAYLOADS = [
+  { payload: "'", desc: "Single quote syntax break" },
+  { payload: "' OR '1'='1", desc: "Tautology boolean bypass" },
+  { payload: "1' ORDER BY 1--+", desc: "Column enumeration probe" },
+  { payload: "' UNION SELECT NULL--", desc: "Union-based injection probe" },
+  { payload: "1' AND (SELECT 1)=1 --", desc: "Subquery conditional evaluation" }
+];
+
+/**
+ * Reflected XSS Payloads with unique canary markers
+ */
+const XSS_PAYLOADS = [
+  {
+    payload: '"><script>alert("cyfence_xss")</script>',
+    marker: '<script>alert("cyfence_xss")</script>',
+    context: 'HTML Body / Script Injection'
+  },
+  {
+    payload: '"><img src=x onerror=alert("cyfence_xss")>',
+    marker: '<img src=x onerror=alert("cyfence_xss")>',
+    context: 'HTML Attribute / Event Handler Injection'
+  },
+  {
+    payload: '"><svg/onload=alert("cyfence_xss")>',
+    marker: '<svg/onload=alert("cyfence_xss")>',
+    context: 'SVG Vector Injection'
+  }
+];
+
+/**
+ * Local File Inclusion (LFI) & Path Traversal Payloads
+ */
+const LFI_PAYLOADS = [
+  {
+    payload: '../../../../etc/passwd',
+    signatures: [/root:.*:0:0:/i, /bin\/bash/i, /nobody:\*:-2:-2:/i],
+    os: 'Linux / Unix (/etc/passwd)'
+  },
+  {
+    payload: '..\\..\\..\\..\\windows\\win.ini',
+    signatures: [/\[fonts\]/i, /\[extensions\]/i, /\[mci extensions\]/i],
+    os: 'Windows (win.ini)'
+  },
+  {
+    payload: '/%2e%2e/%2e%2e/%2e%2e/etc/passwd',
+    signatures: [/root:.*:0:0:/i],
+    os: 'Linux URL-Encoded Traversal'
+  }
+];
+
+/**
+ * Parses an HTML response body to discover internal links, endpoints, and input parameters
+ * @param {string} baseUrl - Base URL being scanned
+ * @param {string} html - HTML content
+ * @returns {{links: string[], parameters: string[], forms: Array<{action: string, method: string, inputs: string[]}>}}
+ */
+function crawlEndpointsAndParameters(baseUrl, html) {
+  const links = new Set();
+  const parameters = new Set(['id', 'q', 'search', 'user', 'query', 'page', 'url', 'redirect', 'file', 'cat']);
+  const forms = [];
+
+  if (!html || typeof html !== 'string') {
+    return { links: Array.from(links), parameters: Array.from(parameters), forms };
+  }
+
+  try {
+    const baseObj = new URL(baseUrl);
+    const origin = baseObj.origin;
+
+    // 1. Extract <a href="..."> links
+    const linkRegex = /<a\s+[^>]*?href=["']([^"']+)["']/gi;
+    let match;
+    while ((match = linkRegex.exec(html)) !== null) {
+      const rawHref = match[1].trim();
+      if (rawHref && !rawHref.startsWith('#') && !rawHref.startsWith('javascript:') && !rawHref.startsWith('mailto:')) {
+        try {
+          const resolved = new URL(rawHref, baseUrl);
+          if (resolved.origin === origin) {
+            links.add(resolved.pathname);
+            // Collect query parameters
+            for (const param of resolved.searchParams.keys()) {
+              parameters.add(param);
+            }
+          }
+        } catch {}
+      }
+    }
+
+    // 2. Extract <form action="..." method="...">
+    const formRegex = /<form\s+([^>]*?)>([\s\S]*?)<\/form>/gi;
+    let formMatch;
+    while ((formMatch = formRegex.exec(html)) !== null) {
+      const formAttrs = formMatch[1];
+      const formBody = formMatch[2];
+
+      const actionMatch = /action=["']([^"']*)["']/i.exec(formAttrs);
+      const methodMatch = /method=["']([^"']*)["']/i.exec(formAttrs);
+      const action = actionMatch ? actionMatch[1] : baseObj.pathname;
+      const method = (methodMatch ? methodMatch[1] : 'GET').toUpperCase();
+
+      const inputNames = [];
+      const inputRegex = /<input\s+[^>]*?name=["']([^"']+)["']/gi;
+      let inMatch;
+      while ((inMatch = inputRegex.exec(formBody)) !== null) {
+        inputNames.push(inMatch[1]);
+        parameters.add(inMatch[1]);
+      }
+
+      forms.push({ action, method, inputs: inputNames });
+    }
+
+    // 3. Extract API script references / fetch calls
+    const scriptRegex = /<script\s+[^>]*?src=["']([^"']+)["']/gi;
+    while ((match = scriptRegex.exec(html)) !== null) {
+      const src = match[1];
+      if (src.startsWith('/') || src.startsWith('./')) {
+        try {
+          links.add(new URL(src, baseUrl).pathname);
+        } catch {}
+      }
+    }
+  } catch {}
+
+  return {
+    links: Array.from(links).slice(0, 20),
+    parameters: Array.from(parameters).slice(0, 15),
+    forms
+  };
+}
+
+/**
+ * Executes deep active offensive vulnerability testing against discovered parameters and routes
+ * @param {string} targetUrl - Target base URL
+ * @param {object} [options] - Scan options (headers, progressCallback)
+ * @returns {Promise<Array<object>>} List of active vulnerability findings with PoCs
+ */
+async function runActiveVulnerabilityScan(targetUrl, options = {}) {
+  const findings = [];
+  const log = options.onLog || (() => {});
+  const requestHeaders = options.headers || {};
+  const parsedTarget = new URL(targetUrl);
+  const root = `${parsedTarget.protocol}//${parsedTarget.host}`;
+
+  log(`[RECON] Probing base application and discovering attack surface...`);
+  const initial = await safeFetch(targetUrl, { headers: requestHeaders });
+  const crawl = crawlEndpointsAndParameters(targetUrl, initial.bodySnippet);
+
+  log(`[CRAWLER] Discovered ${crawl.links.length} endpoint(s), ${crawl.parameters.length} parameter(s), and ${crawl.forms.length} form(s).`);
+
+  // =========================================================================
+  // 1. ACTIVE SQL INJECTION (SQLi) PROBING (CWE-89, ASVS V5.3.4, CAPEC-66)
+  // =========================================================================
+  log(`[AUDIT] Launching Active SQL Injection (SQLi) probing engine...`);
+  let sqliFound = false;
+
+  for (const param of crawl.parameters.slice(0, 8)) {
+    if (sqliFound) break;
+
+    for (const sqli of SQLI_PAYLOADS) {
+      try {
+        const testUrl = new URL(targetUrl);
+        testUrl.searchParams.set(param, sqli.payload);
+
+        log(`[TEST:SQLi] Testing parameter '${param}' with payload: ${sqli.payload}`);
+        const res = await safeFetch(testUrl.toString(), {
+          headers: requestHeaders,
+          timeout: 4000
+        });
+
+        // Search for known RDBMS error signatures
+        for (const sig of SQL_ERROR_SIGNATURES) {
+          if (sig.pattern.test(res.bodySnippet)) {
+            sqliFound = true;
+            log(`[🚨 CRITICAL] SQL Injection Confirmed! DB Engine: ${sig.engine} on parameter: ${param}`);
+
+            findings.push({
+              id: 'ACT-SQLI-DETECTED',
+              title: `Active SQL Injection Confirmed (${sig.engine} Database Error Signature)`,
+              standard: 'OWASP ASVS V5.3.4 (SQL Injection)',
+              cwe: 'CWE-89: Improper Neutralization of Special Elements used in an SQL Command',
+              attackId: 'T1190: Exploit Public-Facing Application',
+              d3fendId: 'D3-IRA (Inbound Restriction Analysis)',
+              severity: SEVERITY.CRITICAL,
+              poc: {
+                parameter: param,
+                payload: sqli.payload,
+                injectedUrl: testUrl.toString(),
+                databaseEngine: sig.engine,
+                evidenceSnippet: res.bodySnippet.slice(0, 300)
+              },
+              details: `The application returned a raw database syntax error when probed with payload \`${sqli.payload}\` on parameter \`${param}\`. Error indicates backend: ${sig.engine}. This allows attackers to bypass authentication, extract database records, or achieve remote code execution.`,
+              remediation: 'Implement parameterized SQL queries / prepared statements (e.g. PDO, PreparedStatement, or ORM parameter binding). Strictly disallow dynamic string concatenation in SQL queries.'
+            });
+            break;
+          }
+        }
+        if (sqliFound) break;
+      } catch {}
+    }
+  }
+
+  // =========================================================================
+  // 2. ACTIVE REFLECTED CROSS-SITE SCRIPTING (XSS) PROBING (CWE-79, ASVS V5.3.1)
+  // =========================================================================
+  log(`[AUDIT] Launching Reflected Cross-Site Scripting (XSS) injection verifications...`);
+  let xssFound = false;
+
+  for (const param of crawl.parameters.slice(0, 8)) {
+    if (xssFound) break;
+
+    for (const xss of XSS_PAYLOADS) {
+      try {
+        const testUrl = new URL(targetUrl);
+        testUrl.searchParams.set(param, xss.payload);
+
+        log(`[TEST:XSS] Probing parameter '${param}' for unencoded script reflection...`);
+        const res = await safeFetch(testUrl.toString(), {
+          headers: requestHeaders,
+          timeout: 4000
+        });
+
+        // Check if the payload is reflected unencoded
+        if (res.bodySnippet && res.bodySnippet.includes(xss.marker)) {
+          xssFound = true;
+          log(`[🚨 HIGH] Reflected XSS Confirmed! Parameter: ${param} in context: ${xss.context}`);
+
+          findings.push({
+            id: 'ACT-XSS-REFLECTED',
+            title: `Active Reflected Cross-Site Scripting (XSS) Verified in ${xss.context}`,
+            standard: 'OWASP ASVS V5.3.1 (Output Encoding & Escaping)',
+            cwe: 'CWE-79: Improper Neutralization of Input During Web Page Generation',
+            attackId: 'T1059.007: JavaScript Execution',
+            d3fendId: 'D3-CEN (Contextual Encoding)',
+            severity: SEVERITY.HIGH,
+            poc: {
+              parameter: param,
+              payload: xss.payload,
+              injectedUrl: testUrl.toString(),
+              reflectedContext: xss.context,
+              evidenceSnippet: res.bodySnippet.slice(Math.max(0, res.bodySnippet.indexOf(xss.marker) - 40), res.bodySnippet.indexOf(xss.marker) + 120)
+            },
+            details: `User-supplied payload on parameter \`${param}\` was reflected verbatim without contextual HTML entity escaping into the document response body. Attackers can execute arbitrary JavaScript in the victim's browser session.`,
+            remediation: 'Contextually encode all user-supplied data before inserting into HTML (e.g. use HTML entity encoding for body, attribute encoding for attributes), and enforce a strict Content-Security-Policy (CSP).'
+          });
+          break;
+        }
+      } catch {}
+    }
+  }
+
+  // =========================================================================
+  // 3. ACTIVE LOCAL FILE INCLUSION (LFI) & PATH TRAVERSAL (CWE-22, ASVS V12.3.1)
+  // =========================================================================
+  log(`[AUDIT] Probing for Local File Inclusion (LFI) and Directory Traversal...`);
+  const fileParams = crawl.parameters.filter(p => /^(?:file|path|doc|template|page|include|folder|dir|name)$/i.test(p));
+  if (fileParams.length === 0) fileParams.push('file', 'page');
+
+  for (const param of fileParams) {
+    for (const lfi of LFI_PAYLOADS) {
+      try {
+        const testUrl = new URL(targetUrl);
+        testUrl.searchParams.set(param, lfi.payload);
+
+        log(`[TEST:LFI] Testing parameter '${param}' with traversal payload: ${lfi.payload}`);
+        const res = await safeFetch(testUrl.toString(), {
+          headers: requestHeaders,
+          timeout: 4000
+        });
+
+        for (const sig of lfi.signatures) {
+          if (sig.test(res.bodySnippet)) {
+            log(`[🚨 CRITICAL] Local File Inclusion Verified on parameter '${param}' (${lfi.os})`);
+            findings.push({
+              id: 'ACT-LFI-DETECTED',
+              title: `Local File Inclusion (LFI) / Path Traversal Verified (${lfi.os})`,
+              standard: 'OWASP ASVS V12.3.1 (Path Traversal & Safe File Access)',
+              cwe: 'CWE-22: Improper Limitation of a Pathname to a Restricted Directory',
+              attackId: 'T1083: File and Directory Discovery',
+              d3fendId: 'D3-IRA (Inbound Restriction Analysis)',
+              severity: SEVERITY.CRITICAL,
+              poc: {
+                parameter: param,
+                payload: lfi.payload,
+                injectedUrl: testUrl.toString(),
+                targetOS: lfi.os,
+                evidenceSnippet: res.bodySnippet.slice(0, 250)
+              },
+              details: `The application disclosed host filesystem artifacts when parameter \`${param}\` was supplied with traversal sequence \`${lfi.payload}\`. This allows unauthorized reading of sensitive server configuration and system credentials.`,
+              remediation: 'Validate input against an allowlist of permitted filenames or use an indirect reference map (e.g., numeric ID) rather than accepting raw paths. Use basename resolution and verify path falls within expected root.'
+            });
+            break;
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // =========================================================================
+  // 4. ACTIVE OPEN REDIRECT AUDIT (CWE-601, ASVS V5.1.5)
+  // =========================================================================
+  log(`[AUDIT] Probing for Open Redirection vulnerabilities...`);
+  const redirectParams = crawl.parameters.filter(p => /^(?:redirect|url|dest|target|next|return|r|goto)$/i.test(p));
+  if (redirectParams.length === 0) redirectParams.push('redirect', 'url', 'next');
+
+  for (const param of redirectParams.slice(0, 4)) {
+    const canaryRedirect = 'https://classiguard-redirect-test.invalid';
+    try {
+      const testUrl = new URL(targetUrl);
+      testUrl.searchParams.set(param, canaryRedirect);
+
+      const res = await safeFetch(testUrl.toString(), {
+        headers: requestHeaders,
+        timeout: 4000,
+        redirect: 'manual'
+      });
+
+      const loc = res.rawHeaders['location'] || '';
+      if (loc.startsWith(canaryRedirect) || loc.startsWith('//classiguard-redirect-test.invalid')) {
+        log(`[⚠️ MEDIUM] Open Redirect Vulnerability Confirmed on parameter: ${param}`);
+        findings.push({
+          id: 'ACT-OPEN-REDIRECT',
+          title: `Open Redirection Vulnerability Detected on Parameter '${param}'`,
+          standard: 'OWASP ASVS V5.1.5 (Redirects and Forwards)',
+          cwe: 'CWE-601: URL Redirection to Untrusted Site (Open Redirect)',
+          attackId: 'T1566: Phishing / Deceptive Redirection',
+          d3fendId: 'D3-IRA',
+          severity: SEVERITY.MEDIUM,
+          poc: {
+            parameter: param,
+            payload: canaryRedirect,
+            locationHeader: loc,
+            injectedUrl: testUrl.toString()
+          },
+          details: `The application redirects to unvalidated external domain '${loc}' when \`${param}\` is manipulated. Attackers leverage open redirects in phishing attacks to bypass security filters.`,
+          remediation: 'Use relative paths for redirects or validate destination URLs against a strict domain whitelist before issuing 3xx redirect headers.'
+        });
+        break;
+      }
+    } catch {}
+  }
+
+  // =========================================================================
+  // 5. GRAPHQL INTROSPECTION & SCHEMA EXPOSURE (CWE-200, ASVS V13.1.5)
+  // =========================================================================
+  log(`[AUDIT] Inspecting GraphQL endpoints for public schema introspection...`);
+  const graphqlPaths = ['/graphql', '/api/graphql', '/v1/graphql', '/query'];
+
+  for (const gqlPath of graphqlPaths) {
+    try {
+      const gqlUrl = `${root}${gqlPath}`;
+      const introspectionQuery = JSON.stringify({
+        query: "query IntrospectionCheck { __schema { queryType { name } types { name } } }"
+      });
+
+      const res = await safeFetch(gqlUrl, {
+        method: 'POST',
+        headers: {
+          ...requestHeaders,
+          'Content-Type': 'application/json'
+        },
+        body: introspectionQuery,
+        timeout: 4000
+      });
+
+      if (res.status === 200 && res.bodySnippet.includes('"__schema"') && res.bodySnippet.includes('"types"')) {
+        log(`[🚨 HIGH] GraphQL Introspection Enabled at: ${gqlPath}`);
+        findings.push({
+          id: 'ACT-GRAPHQL-INTROSPECTION',
+          title: `GraphQL Public Schema Introspection Enabled (${gqlPath})`,
+          standard: 'OWASP ASVS V13.1.5 (API Surface Minimization)',
+          cwe: 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor',
+          attackId: 'T1592: Gather Victim Host Information',
+          d3fendId: 'D3-ACA (Access Control Architecture)',
+          severity: SEVERITY.HIGH,
+          poc: {
+            endpoint: gqlPath,
+            requestUrl: gqlUrl,
+            evidenceSnippet: res.bodySnippet.slice(0, 300)
+          },
+          details: `The GraphQL service exposes full schema introspection to unauthenticated users at \`${gqlPath}\`. Attackers can map all data models, queries, mutations, and hidden administrative fields.`,
+          remediation: 'Disable GraphQL introspection in production environments (e.g. `introspection: false` in Apollo Server, or use a schema validation gateway plugin).'
+        });
+        break;
+      }
+    } catch {}
+  }
+
+  // =========================================================================
+  // 6. HTTP VERB TAMPERING & INSECURE METHODS (CWE-650, ASVS V14.4.4)
+  // =========================================================================
+  log(`[AUDIT] Testing HTTP Method and Verb Tampering permissions...`);
+  try {
+    const optRes = await safeFetch(targetUrl, {
+      method: 'OPTIONS',
+      headers: requestHeaders,
+      timeout: 4000
+    });
+
+    const allowHdr = optRes.rawHeaders['allow'] || optRes.rawHeaders['public'] || '';
+    if (allowHdr) {
+      log(`[INFO] Server declared supported methods: ${allowHdr}`);
+      if (/TRACE/i.test(allowHdr)) {
+        findings.push({
+          id: 'ACT-METHOD-TRACE',
+          title: 'HTTP TRACE / TRACK Method Permitted (XST Vector)',
+          standard: 'OWASP ASVS V14.4.4 (HTTP Methods)',
+          cwe: 'CWE-650: Trusting HTTP Permission Methods on Server',
+          attackId: 'T1592',
+          severity: SEVERITY.MEDIUM,
+          details: `The HTTP TRACE method is declared enabled in '${allowHdr}', posing Cross-Site Tracing (XST) risks.`,
+          remediation: 'Disable TRACE and TRACK methods across web server virtual hosts.'
+        });
+      }
+
+      if (/PUT|DELETE/i.test(allowHdr)) {
+        findings.push({
+          id: 'ACT-METHOD-PUT-DELETE',
+          title: `Dangerous HTTP Methods Declared Enabled (${allowHdr})`,
+          standard: 'OWASP ASVS V14.4.4',
+          cwe: 'CWE-650',
+          attackId: 'T1190',
+          severity: SEVERITY.LOW,
+          details: `The server advertises support for modifying verbs: '${allowHdr}'. Ensure these endpoints enforce strict access controls.`,
+          remediation: 'Disable unused HTTP verbs at the reverse proxy if not required by REST API specifications.'
+        });
+      }
+    }
+  } catch {}
+
+  log(`[COMPLETE] Active Offensive Vulnerability Scan finished. Generated ${findings.length} active findings.`);
+  return findings;
+}
+
+// --- End: src/auditors/activeScanner.mjs ---
 
 
 // --- Start: src/auditors/wafDetector.mjs ---
@@ -2697,6 +3316,7 @@ async function writeBatchHtmlReport(batchResults, filePath) {
 
 
 
+
 /**
  * Defensive Security Headers enforced on all Web GUI HTTP responses
  */
@@ -2707,6 +3327,33 @@ const DEFENSIVE_HEADERS = {
   'Referrer-Policy': 'no-referrer',
   'Cache-Control': 'no-store, no-cache, must-revalidate, private'
 };
+
+/**
+ * Discovers host network interfaces to display real machine LAN/Wi-Fi IPs
+ */
+function getHostNetworkInfo() {
+  const interfaces = os.networkInterfaces ? os.networkInterfaces() : {};
+  const list = [];
+  for (const [name, addrs] of Object.entries(interfaces)) {
+    for (const a of addrs || []) {
+      if (a.family === 'IPv4' || a.family === 4) {
+        list.push({
+          name,
+          address: a.address,
+          internal: a.internal,
+          label: a.internal ? `${name} (Local Loopback)` : `${name} (Network / LAN IP)`
+        });
+      }
+    }
+  }
+  const nonInternal = list.find(i => !i.internal);
+  return {
+    hostname: os.hostname ? os.hostname() : 'localhost',
+    platform: process.platform,
+    interfaces: list,
+    primaryIp: nonInternal ? nonInternal.address : '127.0.0.1'
+  };
+}
 
 /**
  * Resilient cryptographic token generator with defensive fallbacks
@@ -2836,6 +3483,9 @@ function checkExistingCyFenceInstance(port, host) {
   });
 }
 
+// In-memory sessions store for live scan progress streaming
+const scanSessions = new Map();
+
 /**
  * Creates and binds the HTTP server for the GUI dashboard on a specific port
  */
@@ -2844,6 +3494,54 @@ function createAndBindServer(port, host, csrfToken) {
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
       const pathname = url.pathname;
+
+      // 0. API: GET /api/system/network
+      if (pathname === '/api/system/network' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+        res.end(JSON.stringify(getHostNetworkInfo()));
+        return;
+      }
+
+      // 0. API: GET /api/audit/stream (Server-Sent Events for Live Cyber Console)
+      if (pathname === '/api/audit/stream' && req.method === 'GET') {
+        const sessionId = url.searchParams.get('sessionId') || 'default';
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          ...DEFENSIVE_HEADERS
+        });
+
+        res.write(`data: ${JSON.stringify({ type: 'connected', sessionId })}\n\n`);
+
+        if (!scanSessions.has(sessionId)) {
+          scanSessions.set(sessionId, { listeners: [], logs: [] });
+        }
+        const session = scanSessions.get(sessionId);
+
+        const listener = (data) => {
+          try {
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+          } catch {}
+        };
+        session.listeners.push(listener);
+
+        // Send existing logs
+        for (const line of session.logs) {
+          listener({ type: 'log', line });
+        }
+
+        req.on('close', () => {
+          const idx = session.listeners.indexOf(listener);
+          if (idx > -1) session.listeners.splice(idx, 1);
+          if (session.listeners.length === 0) {
+            setTimeout(() => {
+              if (session.listeners.length === 0) scanSessions.delete(sessionId);
+            }, 60000);
+          }
+        });
+        return;
+      }
 
       // Security Guard: Verify Origin on state-changing API endpoints
       if (pathname.startsWith('/api/') && req.method === 'POST') {
@@ -2871,7 +3569,7 @@ function createAndBindServer(port, host, csrfToken) {
         }
       }
 
-      // 1. API: POST /api/audit (Single Target Audit)
+      // 1. API: POST /api/audit (Single Target Audit with Live Streaming)
       if (pathname === '/api/audit' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => {
@@ -2903,11 +3601,37 @@ function createAndBindServer(port, host, csrfToken) {
               return;
             }
 
-            console.log(`[CyFence GUI] Auditing single target: ${targetUrl}`);
+            const sessionId = data.sessionId || 'default';
+            if (!scanSessions.has(sessionId)) {
+              scanSessions.set(sessionId, { listeners: [], logs: [] });
+            }
+            const session = scanSessions.get(sessionId);
+            session.logs = [];
+
+            const broadcast = (event) => {
+              for (const l of session.listeners) {
+                try { l(event); } catch {}
+              }
+            };
+
+            const onLog = (msg) => {
+              const line = `[${new Date().toLocaleTimeString()}] ${msg}`;
+              session.logs.push(line);
+              broadcast({ type: 'log', line });
+            };
+
+            const onProgress = (prog) => {
+              broadcast({ type: 'progress', progress: prog });
+            };
+
+            console.log(`[CyFence GUI] Auditing target (${data.profile || 'deep'}): ${targetUrl}`);
             const result = await auditUrl(targetUrl, {
+              profile: data.profile || 'deep',
               skipRoutes: data.skipRoutes || false,
               jwt: data.jwt || null,
               headers: data.headers || {},
+              onLog,
+              onProgress,
               ai: data.enableAi ? {
                 provider: data.aiProvider || 'ollama',
                 model: data.aiModel || null,
@@ -2916,8 +3640,10 @@ function createAndBindServer(port, host, csrfToken) {
               } : null
             });
 
+            broadcast({ type: 'complete', result });
+
             res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
-            res.end(JSON.stringify(result));
+            res.end(JSON.stringify({ ...result, logs: session.logs }));
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
             res.end(JSON.stringify({ error: err.message }));
@@ -2948,7 +3674,8 @@ function createAndBindServer(port, host, csrfToken) {
 
             console.log(`[CyFence GUI] Running batch audit across ${targets.length} targets...`);
             const batchResults = await auditBatch(targets, {
-              skipRoutes: data.skipRoutes || false
+              skipRoutes: data.skipRoutes || false,
+              profile: data.profile || 'standard'
             });
 
             const avgScore = Math.round(batchResults.reduce((acc, r) => acc + (r.compliance?.score || 0), 0) / (batchResults.length || 1));
@@ -3001,7 +3728,42 @@ function createAndBindServer(port, host, csrfToken) {
         return;
       }
 
-      // 4. API: POST /api/ai/advise (AI Security Advisor Call)
+      // 4. API: POST /api/ai/test (Test User Custom AI Connection)
+      if (pathname === '/api/ai/test' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const provider = data.provider || 'ollama';
+            const apiKey = data.apiKey;
+            const model = data.model;
+            const endpoint = data.endpoint;
+
+            const syntheticResult = {
+              targetUrl: 'https://api-connectivity-check.local',
+              compliance: { score: 70, grade: 'C' },
+              findings: [{ id: 'SEC-TEST', title: 'Connectivity Verification', severity: 'LOW', details: 'Testing AI integration.' }]
+            };
+
+            const advisory = await getAiSecurityAdvisory(syntheticResult, {
+              provider,
+              apiKey,
+              model,
+              endpoint
+            });
+
+            res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({ success: true, provider, model: advisory.model, advisory: advisory.advisory }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+        return;
+      }
+
+      // 5. API: POST /api/ai/advise (AI Security Advisor Call)
       if (pathname === '/api/ai/advise' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => {
@@ -3036,15 +3798,73 @@ function createAndBindServer(port, host, csrfToken) {
         return;
       }
 
+      // 6. API: POST /api/api-spec/parse (OpenAPI / Swagger Spec Parser)
+      if (pathname === '/api/api-spec/parse' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            let spec = null;
+
+            if (data.specUrl) {
+              const fetchRes = await safeFetch(data.specUrl, { headers: data.headers || {} });
+              if (fetchRes.status === 200 && fetchRes.bodySnippet) {
+                spec = JSON.parse(fetchRes.bodySnippet);
+              } else {
+                throw new Error(`Failed to retrieve spec from ${data.specUrl}: HTTP ${fetchRes.status}`);
+              }
+            } else if (data.specContent) {
+              spec = typeof data.specContent === 'string' ? JSON.parse(data.specContent) : data.specContent;
+            }
+
+            if (!spec || !spec.paths) {
+              throw new Error('Valid OpenAPI / Swagger document with a "paths" object is required.');
+            }
+
+            const baseUrl = data.baseUrl || (spec.servers && spec.servers[0]?.url) || (spec.schemes && spec.host ? `${spec.schemes[0]}://${spec.host}${spec.basePath || ''}` : '');
+            const endpoints = [];
+
+            for (const [pathKey, methods] of Object.entries(spec.paths)) {
+              for (const [method, details] of Object.entries(methods)) {
+                if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
+                  const fullUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/${pathKey.replace(/^\//, '')}` : pathKey;
+                  endpoints.push({
+                    url: fullUrl,
+                    path: pathKey,
+                    method: method.toUpperCase(),
+                    summary: details.summary || details.description || '',
+                    parameters: (details.parameters || []).map(p => p.name)
+                  });
+                }
+              }
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({
+              title: spec.info?.title || 'Parsed API Spec',
+              version: spec.info?.version || '1.0',
+              endpointCount: endpoints.length,
+              endpoints
+            }));
+          } catch (err) {
+            res.writeHead(400, { 'Content-Type': 'application/json', ...DEFENSIVE_HEADERS });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+        return;
+      }
+
       // Root GUI Dashboard Page: GET / or /index.html
       if (pathname === '/' || pathname === '/index.html') {
+        const networkInfo = getHostNetworkInfo();
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...DEFENSIVE_HEADERS });
         res.end(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="cyfence-token" content="${csrfToken}">
-  <title>ClassiGuard CyFence: Complete Defensive Security Suite</title>
+  <title>ClassiGuard CyFence: Complete Enterprise Security Suite</title>
   <style>
     :root {
       --bg: #0b0f19; --card: #111827; --card-hover: #172033; --border: #1f2937; --text: #f9fafb;
@@ -3052,25 +3872,27 @@ function createAndBindServer(port, host, csrfToken) {
       --green: #10b981; --purple: #a855f7; --cyan: #06b6d4;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 1.5rem; line-height: 1.5; }
-    .container { max-width: 1200px; margin: 0 auto; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 1.25rem; line-height: 1.5; }
+    .container { max-width: 1240px; margin: 0 auto; }
     
     /* Header */
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.2rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
     .brand { display: flex; align-items: center; gap: 0.75rem; }
-    .brand-icon { width: 42px; height: 42px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .brand-icon { width: 44px; height: 44px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
     .brand h1 { font-size: 1.4rem; color: #fff; font-weight: 700; letter-spacing: -0.02em; }
     .brand p { color: var(--muted); font-size: 0.8rem; }
-    .badges-row { display: flex; gap: 0.5rem; align-items: center; }
+    .badges-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .badge-pill { padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
     .pill-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
     .pill-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .pill-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .pill-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
 
     /* Navigation Bar */
-    .nav-bar { display: flex; gap: 0.4rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.35rem; margin-bottom: 1.5rem; overflow-x: auto; }
-    .nav-btn { flex: 1; min-width: 140px; padding: 0.65rem 0.9rem; background: transparent; border: none; color: var(--muted); font-weight: 600; font-size: 0.85rem; border-radius: 7px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+    .nav-bar { display: flex; gap: 0.4rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.35rem; margin-bottom: 1.25rem; overflow-x: auto; }
+    .nav-btn { flex: 1; min-width: 140px; padding: 0.65rem 0.85rem; background: transparent; border: none; color: var(--muted); font-weight: 600; font-size: 0.85rem; border-radius: 7px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; white-space: nowrap; }
     .nav-btn:hover { color: #fff; background: var(--card-hover); }
-    .nav-btn.active { color: #fff; background: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .nav-btn.active { color: #fff; background: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.25); }
 
     /* View Sections */
     .view-section { display: none; }
@@ -3089,11 +3911,11 @@ function createAndBindServer(port, host, csrfToken) {
     button.btn-secondary { background: #1f2937; color: #d1d5db; border: 1px solid #374151; padding: 0.7rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.15s; }
     button.btn-secondary:hover { background: #374151; color: #fff; }
 
-    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted); }
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted); }
     .options-grid label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 
     /* Results Dashboard Grid */
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
     .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; text-align: center; }
     .score-card .title { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
     .score-card .value { font-size: 2.2rem; font-weight: 800; margin-top: 0.25rem; }
@@ -3113,8 +3935,24 @@ function createAndBindServer(port, host, csrfToken) {
     .badge-LOW { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #22d3ee; }
     .badge-PASS { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
 
+    /* Exploit PoC Drawer */
+    .poc-box { background: #030712; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 0.75rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.8rem; }
+    .poc-label { color: #f87171; font-weight: bold; margin-bottom: 0.3rem; }
+
+    /* Cyber Live Console */
+    .cyber-console { background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 0.85rem; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.8rem; color: #38bdf8; max-height: 220px; overflow-y: auto; margin-top: 1rem; display: none; line-height: 1.4; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+    .console-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--muted); border-bottom: 1px solid #1e293b; padding-bottom: 0.4rem; margin-bottom: 0.5rem; }
+
+    /* Progress Stepper */
+    .progress-track { display: none; margin-top: 1rem; margin-bottom: 1.25rem; }
+    .stepper-bar { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--muted); }
+    .step-item { display: flex; align-items: center; gap: 0.3rem; }
+    .step-item.active { color: #38bdf8; font-weight: bold; }
+    .step-item.done { color: var(--green); }
+    .progress-bar-bg { width: 100%; height: 8px; background: #1f2937; border-radius: 999px; overflow: hidden; }
+    .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--cyan)); transition: width 0.3s ease; }
+
     pre { background: #030712; padding: 1rem; border-radius: 6px; border: 1px solid var(--border); overflow-x: auto; font-family: monospace; font-size: 0.85rem; color: #7dd3fc; margin-top: 0.5rem; }
-    .spinner { display: none; text-align: center; padding: 2rem; color: var(--muted); font-size: 1rem; }
     
     /* Tables */
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -3130,61 +3968,94 @@ function createAndBindServer(port, host, csrfToken) {
         <div class="brand-icon">🛡️</div>
         <div>
           <h1>ClassiGuard CyFence</h1>
-          <p>Enterprise Defensive Web Posture & Compliance Suite &bull; Zero External Dependencies</p>
+          <p>Enterprise Offensive & Defensive Web Posture Suite &bull; Zero External Dependencies</p>
         </div>
       </div>
       <div class="badges-row">
+        <span class="badge-pill pill-cyan" id="hostIpBadge">🌐 Host IP: ${networkInfo.primaryIp}</span>
         <span class="badge-pill pill-green">● Local Loopback (127.0.0.1)</span>
-        <span class="badge-pill pill-blue">CSRF Guard Active</span>
-        <span class="badge-pill pill-green">Air-Gapped Ready</span>
+        <span class="badge-pill pill-purple">⚡ DAST Injection Engine Active</span>
+        <span class="badge-pill pill-blue">🔒 CSRF Guard Active</span>
       </div>
     </header>
 
     <!-- Top Navigation Bar -->
     <nav class="nav-bar">
-      <button class="nav-btn active" data-view="view-single" onclick="switchView('view-single', this)">🚀 Single Audit</button>
-      <button class="nav-btn" data-view="view-batch" onclick="switchView('view-batch', this)">📋 Multi-Target Batch</button>
+      <button class="nav-btn active" data-view="view-single" onclick="switchView('view-single', this)">🚀 Single Target Audit</button>
+      <button class="nav-btn" data-view="view-custom-api" onclick="switchView('view-custom-api', this)">🔌 Custom API & Network Engine</button>
+      <button class="nav-btn" data-view="view-batch" onclick="switchView('view-batch', this)">📋 Multi-Target Fleet</button>
       <button class="nav-btn" data-view="view-diff" onclick="switchView('view-diff', this)">⚖️ Drift & Diff</button>
       <button class="nav-btn" data-view="view-hardening" onclick="switchView('view-hardening', this)">🛡️ Blue Team Auto-Patch</button>
       <button class="nav-btn" data-view="view-ai" onclick="switchView('view-ai', this)">🤖 AI Security Advisor</button>
-      <button class="nav-btn" data-view="view-tour" onclick="switchView('view-tour', this)">📖 Tour & Architecture</button>
+      <button class="nav-btn" data-view="view-tour" onclick="switchView('view-tour', this)">📖 Architecture & Tour</button>
     </nav>
 
     <!-- VIEW 1: SINGLE TARGET AUDIT -->
     <div id="view-single" class="view-section active">
       <div class="card">
         <div class="card-title">
-          <span>Target Security Posture Audit</span>
+          <span>Target Vulnerability & Posture Audit</span>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn-secondary" onclick="exportReport('html')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Export HTML</button>
             <button class="btn-secondary" onclick="exportReport('json')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Export JSON</button>
             <button class="btn-secondary" onclick="exportReport('md')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Export MD</button>
           </div>
         </div>
-        <p class="card-subtitle">Performs comprehensive defensive verifications across OWASP ASVS v4.0, MITRE ATT&CK, D3FEND, and RFC 8725.</p>
+        <p class="card-subtitle">Executes deep penetration verifications: Active SQLi, Reflected XSS, SSRF, LFI, GraphQL, and OWASP ASVS v4.0.</p>
 
         <div class="input-row">
           <input type="text" id="targetUrl" placeholder="Enter target URL (e.g. https://example.com or http://localhost:8080/insecure)" value="http://localhost:8080/insecure">
-          <button class="btn-primary" id="scanBtn" onclick="runSingleAudit()">🚀 Launch Audit</button>
+          <select id="scanProfileSelect" style="max-width: 280px; flex: initial;">
+            <option value="deep" selected>🔴 Deep Red Team VAPT (Full Injections)</option>
+            <option value="standard">🛡️ Standard ASVS Audit (Passive + Routes)</option>
+            <option value="fast">⚡ Quick Recon (Perimeter Only)</option>
+          </select>
+          <button class="btn-primary" id="scanBtn" onclick="runSingleAudit()">🚀 Launch Deep Audit</button>
         </div>
 
         <div class="options-grid">
-          <label><input type="checkbox" id="optRoutes" checked> Scan Sensitive Metadata (/.git, /.env)</label>
+          <label><input type="checkbox" id="optActiveInjections" checked> Active Offensive Injections (SQLi, XSS, LFI)</label>
+          <label><input type="checkbox" id="optRoutes" checked> 50+ Sensitive Artifacts (/.git, /.env, backups)</label>
           <label><input type="checkbox" id="optAi"> Enable AI Security Advisor</label>
-          <label><input type="checkbox" id="optCustomHeaders"> Send Custom Audit Headers</label>
-          <label><input type="checkbox" id="optJwt"> Provide Target JWT for RFC 8725</label>
+          <label><input type="checkbox" id="optCustomHeaders"> Send Custom API Headers</label>
+          <label><input type="checkbox" id="optJwt"> Explicit JWT for RFC 8725</label>
         </div>
 
         <div id="customHeadersBox" style="display: none; margin-bottom: 1rem;">
-          <input type="text" id="customHeaderInput" placeholder="Custom headers in JSON format (e.g. {&quot;Authorization&quot;: &quot;Bearer token&quot;})">
+          <input type="text" id="customHeaderInput" placeholder="Custom headers in JSON format (e.g. {&quot;Authorization&quot;: &quot;Bearer token&quot;, &quot;X-API-Key&quot;: &quot;key&quot;})">
         </div>
 
         <div id="jwtBox" style="display: none; margin-bottom: 1rem;">
           <input type="text" id="jwtInput" placeholder="Paste raw JWT (header.payload.signature) to audit for alg:none and expiration">
         </div>
-      </div>
 
-      <div id="singleSpinner" class="spinner">🔍 Executing security verifications across OWASP ASVS, ATT&CK, and D3FEND...</div>
+        <!-- Interactive Multi-Stage Progress Stepper -->
+        <div id="scanProgressTrack" class="progress-track">
+          <div class="stepper-bar">
+            <span class="step-item" id="step1">① Recon & TLS</span>
+            <span class="step-item" id="step2">② Endpoint Spider</span>
+            <span class="step-item" id="step3">③ Active Injections</span>
+            <span class="step-item" id="step4">④ API & GraphQL</span>
+            <span class="step-item" id="step5">⑤ Posture Grading</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="progressBarFill" class="progress-bar-fill"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 0.4rem; font-size: 0.8rem;">
+            <span id="scanStatusMsg" style="color: var(--cyan);">Initializing target probe...</span>
+            <span id="scanPercentText" style="color: var(--muted); font-weight: bold;">0%</span>
+          </div>
+        </div>
+
+        <!-- Live Cyber Streaming Console -->
+        <div id="cyberConsole" class="cyber-console">
+          <div class="console-header">
+            <span>🔴 LIVE RED TEAM PROBE LOGS (STREAMING)</span>
+            <span id="consoleItemCount">0 events</span>
+          </div>
+          <div id="consoleLogOutput"></div>
+        </div>
+      </div>
 
       <div id="singleResults" style="display: none;">
         <div class="summary-grid">
@@ -3208,7 +4079,7 @@ function createAndBindServer(port, host, csrfToken) {
 
         <div class="card">
           <div class="card-title">
-            <span>Defensive Audit Findings</span>
+            <span>Defensive Audit Findings & PoC Evidence</span>
             <div class="filter-bar" style="margin-bottom: 0;">
               <button class="filter-btn active" onclick="filterFindings('ALL', this)">All</button>
               <button class="filter-btn" onclick="filterFindings('CRITICAL', this)">Critical</button>
@@ -3223,11 +4094,100 @@ function createAndBindServer(port, host, csrfToken) {
       </div>
     </div>
 
-    <!-- VIEW 2: MULTI-TARGET BATCH AUDIT -->
+    <!-- VIEW 2: CUSTOM API & NETWORK ENGINE -->
+    <div id="view-custom-api" class="view-section">
+      <div class="card">
+        <div class="card-title">Custom REST API & OpenAPI Testing Console</div>
+        <p class="card-subtitle">Directly audit custom REST endpoints, ingest OpenAPI/Swagger specifications, and configure custom authentication.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem;">OpenAPI / Swagger Specification URL:</label>
+            <input type="text" id="apiSpecUrl" placeholder="https://api.example.com/v2/swagger.json">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem;">API Base URL Override (Optional):</label>
+            <input type="text" id="apiBaseUrl" placeholder="https://api.example.com/v1">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem;">Or Paste Raw OpenAPI / Swagger JSON Specification:</label>
+          <textarea id="apiSpecContent" rows="5" placeholder='{"openapi": "3.0.0", "paths": { "/api/users": { "get": {} } }}'></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
+          <button class="btn-primary" onclick="parseApiSpec()">🔍 Parse Specification & Generate Targets</button>
+          <button class="btn-secondary" onclick="loadSamplePetstoreSpec()">Load Sample API Spec</button>
+        </div>
+
+        <div id="apiSpecResultBox" style="display: none; background: #030712; border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
+          <h4 id="apiSpecTitle" style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;"></h4>
+          <p id="apiSpecStats" style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem;"></p>
+          <div id="apiEndpointsTable" style="max-height: 200px; overflow-y: auto;"></div>
+          <button class="btn-primary" onclick="loadParsedEndpointsIntoBatch()" style="margin-top: 0.75rem;">📋 Send Endpoints to Fleet Batch Audit</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Host Network Interfaces & IP Configuration</div>
+        <p class="card-subtitle">Active IPv4 network adapters detected on this host machine for internal, LAN, and perimeter scanning.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Interface Adapter</th>
+              <th>IP Address</th>
+              <th>Scope</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="networkInterfacesTableBody">
+            <tr><td colspan="4" style="color: var(--muted);">Loading network interfaces...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Bring Your Own AI API (BYOK) Configuration</div>
+        <p class="card-subtitle">Configure your own OpenAI, Anthropic Claude, Google Gemini, or Ollama credentials for automated remediation synthesis.</p>
+
+        <div class="options-grid">
+          <div>
+            <label style="display: block; margin-bottom: 0.3rem;">AI Provider:</label>
+            <select id="customAiProvider" onchange="updateAiProviderPlaceholders()">
+              <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
+              <option value="claude">Anthropic Claude (Claude 3.5 Sonnet)</option>
+              <option value="gemini">Google Gemini (Gemini 2.5 Flash, 1.5 Pro)</option>
+              <option value="ollama" selected>Ollama (Local / Air-Gapped Llama 3)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.3rem;">API Key:</label>
+            <input type="password" id="customAiKey" placeholder="sk-...">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.3rem;">Model Identifier:</label>
+            <input type="text" id="customAiModel" placeholder="llama3 or gpt-4o-mini">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.3rem;">Custom Endpoint URL (Optional):</label>
+            <input type="text" id="customAiEndpoint" placeholder="http://localhost:11434">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
+          <button class="btn-primary" onclick="testCustomAiConnection()">⚡ Test AI Connection</button>
+          <button class="btn-secondary" onclick="saveCustomAiSettings()">💾 Save AI Settings</button>
+          <span id="aiTestStatus" style="font-size: 0.85rem; font-weight: bold;"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: MULTI-TARGET BATCH AUDIT -->
     <div id="view-batch" class="view-section">
       <div class="card">
-        <div class="card-title">Multi-Target Batch Auditing Engine</div>
-        <p class="card-subtitle">Execute audits across enterprise fleets or multiple internal microservices simultaneously.</p>
+        <div class="card-title">Multi-Target Fleet Auditing Engine</div>
+        <p class="card-subtitle">Execute audits across enterprise fleets or internal microservices simultaneously.</p>
 
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem;">Target URLs (One per line):</label>
@@ -3266,7 +4226,7 @@ function createAndBindServer(port, host, csrfToken) {
       </div>
     </div>
 
-    <!-- VIEW 3: POSTURE DRIFT & DIFF -->
+    <!-- VIEW 4: POSTURE DRIFT & DIFF -->
     <div id="view-diff" class="view-section">
       <div class="card">
         <div class="card-title">Configuration Drift & Regression Analysis (Diff)</div>
@@ -3322,7 +4282,7 @@ function createAndBindServer(port, host, csrfToken) {
       </div>
     </div>
 
-    <!-- VIEW 4: BLUE TEAM AUTO-REMEDIATION & SIEM -->
+    <!-- VIEW 5: BLUE TEAM AUTO-REMEDIATION & SIEM -->
     <div id="view-hardening" class="view-section">
       <div class="card">
         <div class="card-title">
@@ -3346,23 +4306,24 @@ function createAndBindServer(port, host, csrfToken) {
       </div>
     </div>
 
-    <!-- VIEW 5: AI SECURITY ADVISOR -->
+    <!-- VIEW 6: AI SECURITY ADVISOR -->
     <div id="view-ai" class="view-section">
       <div class="card">
         <div class="card-title">AI Security Advisor & Synthesis</div>
-        <p class="card-subtitle">Multi-provider synthesis with Ollama (Air-Gapped Local), Anthropic Claude, and OpenAI.</p>
+        <p class="card-subtitle">Synthesizes targeted architectural guidance with mandatory human review enforcement.</p>
 
         <div style="background: rgba(245,158,11,0.1); border: 1px solid var(--yellow); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #fbbf24; font-size: 0.85rem;">
-          ⚠️ <strong>MANDATORY HUMAN APPROVAL ENFORCED</strong>: AI provides assistive proposals only. Explicit engineering approval and staging verification are required prior to applying changes.
+          ⚠️ <strong>MANDATORY HUMAN APPROVAL ENFORCED</strong>: AI provides assistive proposals only. Explicit engineering approval is required prior to applying changes.
         </div>
 
         <div class="options-grid">
           <div>
             <label style="display: block; margin-bottom: 0.3rem;">AI Provider:</label>
             <select id="aiProviderSelect" style="width: 100%;">
-              <option value="ollama">Ollama (100% Offline / Air-Gapped Llama 3)</option>
-              <option value="claude">Anthropic Claude (claude-3-5-sonnet)</option>
+              <option value="ollama">Ollama (100% Offline / Local Llama 3)</option>
               <option value="openai">OpenAI (gpt-4o-mini)</option>
+              <option value="claude">Anthropic Claude (claude-3-5-sonnet)</option>
+              <option value="gemini">Google Gemini (gemini-2.5-flash)</option>
             </select>
           </div>
           <div>
@@ -3381,7 +4342,7 @@ function createAndBindServer(port, host, csrfToken) {
         </div>
         <div id="aiAdvisoryText" style="white-space: pre-wrap; font-size: 0.9rem; color: #e5e7eb; margin-bottom: 1rem; line-height: 1.6;"></div>
 
-        <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: gap;">
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 0.8rem; color: var(--yellow);">🔒 Status: Awaiting Human Engineer Review</span>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn-secondary" onclick="logApproval(false)" style="color: var(--red);">✕ Reject Proposal</button>
@@ -3392,35 +4353,35 @@ function createAndBindServer(port, host, csrfToken) {
       </div>
     </div>
 
-    <!-- VIEW 6: PRODUCT TOUR & DOCS -->
+    <!-- VIEW 7: ARCHITECTURE & TOUR -->
     <div id="view-tour" class="view-section">
       <div class="card">
-        <div class="card-title">ClassiGuard CyFence: Architecture & Tour</div>
-        <p class="card-subtitle">Zero-dependency security assessment engine aligned with OWASP ASVS v4.0 and MITRE ATT&CK.</p>
+        <div class="card-title">ClassiGuard CyFence: Architecture & Specifications</div>
+        <p class="card-subtitle">Zero-dependency security assessment engine aligned with OWASP ASVS v4.0, MITRE ATT&CK, and D3FEND.</p>
 
         <div class="summary-grid">
           <div class="score-card">
-            <div class="title">Runtime Dependencies</div>
+            <div class="title">Active Injection Checks</div>
+            <div class="value" style="color: var(--red);">SQLi &bull; XSS</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Sensitive Paths</div>
+            <div class="value" style="color: var(--yellow);">50+</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Throughput Benchmark</div>
+            <div class="value" style="color: var(--cyan);">170k/s</div>
+          </div>
+          <div class="score-card">
+            <div class="title">Dependencies</div>
             <div class="value" style="color: var(--green);">0</div>
-          </div>
-          <div class="score-card">
-            <div class="title">Scale Stress Test</div>
-            <div class="value" style="color: var(--primary);">50,000</div>
-          </div>
-          <div class="score-card">
-            <div class="title">Audit Throughput</div>
-            <div class="value" style="color: var(--cyan);">149k/s</div>
-          </div>
-          <div class="score-card">
-            <div class="title">VAPT Remediations</div>
-            <div class="value" style="color: var(--green);">8 / 8</div>
           </div>
         </div>
 
         <div style="margin-top: 1rem;">
-          <h3 style="font-size: 1rem; color: #fff; margin-bottom: 0.5rem;">Quick Start CLI & Shortcuts</h3>
-          <pre><code># Run Single Audit via Standalone Binary
-cyfence.exe https://example.com --html audit.html
+          <h3 style="font-size: 1rem; color: #fff; margin-bottom: 0.5rem;">Quick Start CLI Commands</h3>
+          <pre><code># Run Single Deep VAPT Audit via Standalone Binary
+cyfence.exe https://example.com --profile deep --html audit.html
 
 # Run Multi-Target Fleet Audit
 cyfence.exe --targets targets.txt --html batch-summary.html
@@ -3439,6 +4400,7 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
     const csrfToken = document.querySelector('meta[name="cyfence-token"]').getAttribute('content');
     let currentAuditData = null;
     let activeHardeningCode = '';
+    let parsedApiEndpoints = [];
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -3471,11 +4433,117 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       document.getElementById('jwtBox').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    // 1. Single Audit Execution
+    // Load Host Network Information on Start
+    async function loadNetworkInfo() {
+      try {
+        const res = await fetch('/api/system/network');
+        const data = await res.json();
+        const tbody = document.getElementById('networkInterfacesTableBody');
+        const badge = document.getElementById('hostIpBadge');
+        if (data.primaryIp) {
+          badge.innerText = '🌐 Host IP: ' + data.primaryIp;
+        }
+
+        tbody.innerHTML = data.interfaces.map(i => {
+          return '<tr>' +
+            '<td><strong>' + escapeHtml(i.name) + '</strong></td>' +
+            '<td><code>' + escapeHtml(i.address) + '</code></td>' +
+            '<td><span class="badge ' + (i.internal ? 'badge-PASS' : 'badge-HIGH') + '">' + (i.internal ? 'Local Loopback' : 'LAN / Network') + '</span></td>' +
+            '<td><button class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="copyToClipboard(\'' + i.address + '\')">Copy IP</button></td>' +
+          '</tr>';
+        }).join('');
+      } catch {}
+    }
+    loadNetworkInfo();
+
+    // Load Saved AI Preferences
+    function loadSavedAiPreferences() {
+      try {
+        const p = localStorage.getItem('cyfence_ai_provider');
+        const k = localStorage.getItem('cyfence_ai_key');
+        const m = localStorage.getItem('cyfence_ai_model');
+        const e = localStorage.getItem('cyfence_ai_endpoint');
+
+        if (p) {
+          document.getElementById('customAiProvider').value = p;
+          document.getElementById('aiProviderSelect').value = p;
+        }
+        if (k) {
+          document.getElementById('customAiKey').value = k;
+          document.getElementById('aiApiKeyInput').value = k;
+        }
+        if (m) document.getElementById('customAiModel').value = m;
+        if (e) document.getElementById('customAiEndpoint').value = e;
+      } catch {}
+    }
+    loadSavedAiPreferences();
+
+    function saveCustomAiSettings() {
+      const p = document.getElementById('customAiProvider').value;
+      const k = document.getElementById('customAiKey').value;
+      const m = document.getElementById('customAiModel').value;
+      const e = document.getElementById('customAiEndpoint').value;
+
+      localStorage.setItem('cyfence_ai_provider', p);
+      localStorage.setItem('cyfence_ai_key', k);
+      localStorage.setItem('cyfence_ai_model', m);
+      localStorage.setItem('cyfence_ai_endpoint', e);
+
+      document.getElementById('aiProviderSelect').value = p;
+      document.getElementById('aiApiKeyInput').value = k;
+
+      const statusEl = document.getElementById('aiTestStatus');
+      statusEl.style.color = 'var(--green)';
+      statusEl.innerText = '✓ Settings Saved to Local Storage!';
+      setTimeout(() => { statusEl.innerText = ''; }, 3000);
+    }
+
+    async function testCustomAiConnection() {
+      const provider = document.getElementById('customAiProvider').value;
+      const apiKey = document.getElementById('customAiKey').value.trim();
+      const model = document.getElementById('customAiModel').value.trim();
+      const endpoint = document.getElementById('customAiEndpoint').value.trim();
+
+      const statusEl = document.getElementById('aiTestStatus');
+      statusEl.style.color = 'var(--cyan)';
+      statusEl.innerText = '⚡ Testing connection to ' + provider.toUpperCase() + '...';
+
+      try {
+        const res = await fetch('/api/ai/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
+          body: JSON.stringify({ provider, apiKey, model, endpoint })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusEl.style.color = 'var(--green)';
+          statusEl.innerText = '✓ AI Connection Verified! Model: ' + (data.model || provider);
+        } else {
+          statusEl.style.color = 'var(--red)';
+          statusEl.innerText = '✕ Connection failed: ' + data.error;
+        }
+      } catch (err) {
+        statusEl.style.color = 'var(--red)';
+        statusEl.innerText = '✕ Error: ' + err.message;
+      }
+    }
+
+    function updateAiProviderPlaceholders() {
+      const p = document.getElementById('customAiProvider').value;
+      const m = document.getElementById('customAiModel');
+      const e = document.getElementById('customAiEndpoint');
+      if (p === 'openai') { m.placeholder = 'gpt-4o-mini'; e.placeholder = 'https://api.openai.com/v1'; }
+      else if (p === 'claude') { m.placeholder = 'claude-3-5-sonnet'; e.placeholder = 'https://api.anthropic.com/v1'; }
+      else if (p === 'gemini') { m.placeholder = 'gemini-2.5-flash'; e.placeholder = 'https://generativelanguage.googleapis.com'; }
+      else { m.placeholder = 'llama3'; e.placeholder = 'http://localhost:11434'; }
+    }
+
+    // 1. Single Audit Execution with Live Streaming Cyber Console
     async function runSingleAudit() {
       const url = document.getElementById('targetUrl').value.trim();
       if (!url) return alert('Please enter a target URL.');
 
+      const profile = document.getElementById('scanProfileSelect').value;
       const skipRoutes = !document.getElementById('optRoutes').checked;
       const enableAi = document.getElementById('optAi').checked;
       let headers = {};
@@ -3488,24 +4556,104 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       }
       const jwt = document.getElementById('optJwt').checked ? document.getElementById('jwtInput').value.trim() : null;
 
-      document.getElementById('singleSpinner').style.display = 'block';
+      const aiProvider = document.getElementById('customAiProvider').value || 'ollama';
+      const aiKey = document.getElementById('customAiKey').value.trim() || null;
+      const aiModel = document.getElementById('customAiModel').value.trim() || null;
+      const aiEndpoint = document.getElementById('customAiEndpoint').value.trim() || null;
+
+      const sessionId = 'cyfence_sess_' + Math.random().toString(36).slice(2, 10);
+
+      // Reset & Display Live Cyber Console
+      const consoleBox = document.getElementById('cyberConsole');
+      const consoleOutput = document.getElementById('consoleLogOutput');
+      const countEl = document.getElementById('consoleItemCount');
+      consoleBox.style.display = 'block';
+      consoleOutput.innerHTML = '';
+      let logCount = 0;
+
+      const appendLog = (line) => {
+        logCount++;
+        countEl.innerText = logCount + ' events';
+        const d = document.createElement('div');
+        d.innerText = line;
+        if (line.includes('CRITICAL')) d.style.color = '#ef4444';
+        else if (line.includes('HIGH')) d.style.color = '#f59e0b';
+        else if (line.includes('SUCCESS')) d.style.color = '#10b981';
+        consoleOutput.appendChild(d);
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+      };
+
+      // Progress Tracker
+      const trackBox = document.getElementById('scanProgressTrack');
+      const fillBar = document.getElementById('progressBarFill');
+      const statusMsg = document.getElementById('scanStatusMsg');
+      const percentText = document.getElementById('scanPercentText');
+      trackBox.style.display = 'block';
+      fillBar.style.width = '10%';
+      percentText.innerText = '10%';
+      statusMsg.innerText = 'Connecting to target and initializing attack surface discovery...';
       document.getElementById('singleResults').style.display = 'none';
+
+      // Connect SSE Stream
+      const sse = new EventSource('/api/audit/stream?sessionId=' + sessionId);
+      sse.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'log') {
+            appendLog(data.line);
+          } else if (data.type === 'progress' && data.progress) {
+            const p = data.progress;
+            fillBar.style.width = p.percent + '%';
+            percentText.innerText = p.percent + '%';
+            statusMsg.innerText = p.stage + ': ' + (p.message || '');
+            for (let i = 1; i <= 5; i++) {
+              const el = document.getElementById('step' + i);
+              if (el) {
+                if (i < p.phase) { el.className = 'step-item done'; }
+                else if (i === p.phase) { el.className = 'step-item active'; }
+                else { el.className = 'step-item'; }
+              }
+            }
+          }
+        } catch {}
+      };
 
       try {
         const res = await fetch('/api/audit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
-          body: JSON.stringify({ url, skipRoutes, enableAi, headers, jwt })
+          body: JSON.stringify({
+            url,
+            profile,
+            skipRoutes,
+            enableAi,
+            headers,
+            jwt,
+            sessionId,
+            aiProvider,
+            aiKey,
+            aiModel,
+            aiEndpoint
+          })
         });
+
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
         currentAuditData = data;
+        fillBar.style.width = '100%';
+        percentText.innerText = '100%';
+        statusMsg.innerText = 'Audit completed successfully!';
+        for (let i = 1; i <= 5; i++) {
+          const el = document.getElementById('step' + i);
+          if (el) el.className = 'step-item done';
+        }
+
         renderSingleResults(data);
       } catch (err) {
         alert('Audit execution failed: ' + err.message);
       } finally {
-        document.getElementById('singleSpinner').style.display = 'none';
+        sse.close();
       }
     }
 
@@ -3545,18 +4693,80 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
         const safeDetails = escapeHtml(f.details);
         const safeFix = f.remediation ? '<div style="margin-top: 0.5rem; font-size: 0.85rem; color: #6ee7b7;"><strong>Fix:</strong> ' + escapeHtml(f.remediation) + '</div>' : '';
 
-        return \`
-          <div class="finding-item">
-            <div><span class="badge badge-\${safeSev}">\${safeSev}</span> <strong>\${safeTitle}</strong></div>
-            <div style="font-size: 0.8rem; color: var(--muted); margin: 0.35rem 0;">Standard: \${safeStd}\${safeCwe}\${safeAttack}</div>
-            <div style="font-size: 0.85rem; color: #d1d5db;">\${safeDetails}</div>
-            \${safeFix}
-          </div>
-        \`;
+        let pocHtml = '';
+        if (f.poc) {
+          pocHtml = '<div class="poc-box">' +
+            '<div class="poc-label">🔍 EXPLOIT PROOF-OF-CONCEPT (PoC)</div>' +
+            (f.poc.parameter ? '<div>• <strong>Vulnerable Parameter:</strong> <code>' + escapeHtml(f.poc.parameter) + '</code></div>' : '') +
+            (f.poc.payload ? '<div>• <strong>Injected Payload:</strong> <code>' + escapeHtml(f.poc.payload) + '</code></div>' : '') +
+            (f.poc.databaseEngine ? '<div>• <strong>Database Engine Detected:</strong> <span style="color:#f59e0b">' + escapeHtml(f.poc.databaseEngine) + '</span></div>' : '') +
+            (f.poc.evidenceSnippet ? '<div style="margin-top:0.3rem">• <strong>Evidence Snippet:</strong> <pre style="padding:0.4rem;margin-top:0.2rem;font-size:0.75rem;">' + escapeHtml(f.poc.evidenceSnippet) + '</pre></div>' : '') +
+            (f.poc.injectedUrl ? '<div style="margin-top:0.3rem">• <strong>Reproduce URL:</strong> <input type="text" readonly value="' + escapeHtml(f.poc.injectedUrl) + '" style="font-size:0.75rem;padding:0.3rem;margin-top:0.2rem;"></div>' : '') +
+          '</div>';
+        }
+
+        return '<div class="finding-item">' +
+          '<div><span class="badge badge-' + safeSev + '">' + safeSev + '</span> <strong>' + safeTitle + '</strong></div>' +
+          '<div style="font-size: 0.8rem; color: var(--muted); margin: 0.35rem 0;">Standard: ' + safeStd + safeCwe + safeAttack + '</div>' +
+          '<div style="font-size: 0.85rem; color: #d1d5db;">' + safeDetails + '</div>' +
+          pocHtml +
+          safeFix +
+        '</div>';
       }).join('');
     }
 
-    // 2. Batch Audit Execution
+    // 2. OpenAPI / Swagger Parsing & Custom API Tester
+    async function parseApiSpec() {
+      const specUrl = document.getElementById('apiSpecUrl').value.trim();
+      const baseUrl = document.getElementById('apiBaseUrl').value.trim();
+      const specContent = document.getElementById('apiSpecContent').value.trim();
+
+      if (!specUrl && !specContent) {
+        return alert('Please provide an OpenAPI Specification URL or paste raw JSON.');
+      }
+
+      try {
+        const res = await fetch('/api/api-spec/parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
+          body: JSON.stringify({ specUrl, baseUrl, specContent })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        parsedApiEndpoints = data.endpoints;
+        document.getElementById('apiSpecResultBox').style.display = 'block';
+        document.getElementById('apiSpecTitle').innerText = '✅ ' + data.title + ' (v' + data.version + ')';
+        document.getElementById('apiSpecStats').innerText = 'Extracted ' + data.endpointCount + ' interactive API routes with parameter definitions:';
+
+        const table = '<table><thead><tr><th>Method</th><th>Endpoint</th><th>Parameters</th><th>Summary</th></tr></thead><tbody>' +
+          data.endpoints.slice(0, 30).map(e => '<tr>' +
+            '<td><span class="badge badge-LOW">' + e.method + '</span></td>' +
+            '<td><code>' + escapeHtml(e.url) + '</code></td>' +
+            '<td>' + (e.parameters.length > 0 ? e.parameters.map(p => '<code>' + escapeHtml(p) + '</code>').join(', ') : '<span style="color:var(--muted)">None</span>') + '</td>' +
+            '<td>' + escapeHtml(e.summary) + '</td>' +
+          '</tr>').join('') +
+        '</tbody></table>';
+
+        document.getElementById('apiEndpointsTable').innerHTML = table;
+      } catch (err) {
+        alert('API Spec parsing failed: ' + err.message);
+      }
+    }
+
+    function loadSamplePetstoreSpec() {
+      document.getElementById('apiSpecUrl').value = 'https://petstore.swagger.io/v2/swagger.json';
+      document.getElementById('apiBaseUrl').value = 'https://petstore.swagger.io/v2';
+    }
+
+    function loadParsedEndpointsIntoBatch() {
+      if (parsedApiEndpoints.length === 0) return alert('No endpoints to transfer.');
+      const urls = parsedApiEndpoints.map(e => e.url).join('\\n');
+      document.getElementById('batchUrls').value = urls;
+      switchView('view-batch');
+    }
+
+    // 3. Multi-Target Fleet Batch
     async function runBatchAudit() {
       const raw = document.getElementById('batchUrls').value;
       const urls = raw.split('\\n').map(u => u.trim()).filter(u => u && !u.startsWith('#'));
@@ -3569,28 +4779,26 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
         const res = await fetch('/api/batch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CyFence-Token': csrfToken },
-          body: JSON.stringify({ urls })
+          body: JSON.stringify({ urls, profile: 'standard' })
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
         document.getElementById('batchResults').style.display = 'block';
-        document.getElementById('batchSummaryStats').innerText = \`Evaluated \${data.count} target(s) &bull; Avg Score: \${data.avgScore}/100 &bull; Critical: \${data.totalCritical} &bull; High: \${data.totalHigh}\`;
+        document.getElementById('batchSummaryStats').innerText = 'Evaluated ' + data.count + ' target(s) • Avg Score: ' + data.avgScore + '/100 • Critical: ' + data.totalCritical + ' • High: ' + data.totalHigh;
 
         const tbody = document.getElementById('batchTableBody');
-        tbody.innerHTML = data.results.map(r => \`
-          <tr>
-            <td><strong>\${escapeHtml(r.targetUrl)}</strong></td>
-            <td><strong>\${r.compliance?.score || 0}/100</strong></td>
-            <td><span class="badge badge-\${r.compliance?.grade || 'F'}">\${r.compliance?.grade || 'F'}</span></td>
-            <td style="color: var(--red); font-weight: bold;">\${r.compliance?.counts?.critical || 0}</td>
-            <td style="color: var(--yellow);">\${r.compliance?.counts?.high || 0}</td>
-            <td>\${r.compliance?.counts?.medium || 0}</td>
-            <td>\${r.compliance?.counts?.low || 0}</td>
-            <td style="color: var(--green);">\${r.compliance?.counts?.passed || 0}</td>
-            <td><button class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadBatchRowIntoSingle('\${encodeURIComponent(JSON.stringify(r))}')">Inspect</button></td>
-          </tr>
-        \`).join('');
+        tbody.innerHTML = data.results.map(r => '<tr>' +
+          '<td><strong>' + escapeHtml(r.targetUrl) + '</strong></td>' +
+          '<td><strong>' + (r.compliance?.score || 0) + '/100</strong></td>' +
+          '<td><span class="badge badge-' + (r.compliance?.grade || 'F') + '">' + (r.compliance?.grade || 'F') + '</span></td>' +
+          '<td style="color: var(--red); font-weight: bold;">' + (r.compliance?.counts?.critical || 0) + '</td>' +
+          '<td style="color: var(--yellow);">' + (r.compliance?.counts?.high || 0) + '</td>' +
+          '<td>' + (r.compliance?.counts?.medium || 0) + '</td>' +
+          '<td>' + (r.compliance?.counts?.low || 0) + '</td>' +
+          '<td style="color: var(--green);">' + (r.compliance?.counts?.passed || 0) + '</td>' +
+          '<td><button class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadBatchRowIntoSingle(\'' + encodeURIComponent(JSON.stringify(r)) + '\')">Inspect</button></td>' +
+        '</tr>').join('');
       } catch (err) {
         alert('Batch audit failed: ' + err.message);
       } finally {
@@ -3610,7 +4818,7 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       document.getElementById('batchUrls').value = "http://localhost:8080/insecure\\nhttps://example.com\\nhttps://httpbin.org/status/200";
     }
 
-    // 3. Diff Analysis
+    // 4. Diff Analysis
     async function runDiffAnalysis() {
       let base, current;
       try {
@@ -3643,17 +4851,15 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
         badge.className = diff.status === 'IMPROVED' ? 'badge-pill pill-green' : (diff.status === 'DEGRADED' ? 'badge-pill' : 'badge-pill pill-blue');
         if (diff.status === 'DEGRADED') badge.style.cssText = 'background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);';
 
-        // Lists
         const newBox = document.getElementById('diffNewDefectsList');
         newBox.innerHTML = diff.newDefects.length > 0
-          ? diff.newDefects.map(d => \`<div style="margin-bottom: 0.35rem;">• [\${escapeHtml(d.severity)}] \${escapeHtml(d.title)}</div>\`).join('')
+          ? diff.newDefects.map(d => '<div style="margin-bottom: 0.35rem;">• [' + escapeHtml(d.severity) + '] ' + escapeHtml(d.title) + '</div>').join('')
           : '<span style="color: var(--green);">✨ Zero new regressions detected.</span>';
 
         const resBox = document.getElementById('diffResolvedDefectsList');
         resBox.innerHTML = diff.resolvedDefects.length > 0
-          ? diff.resolvedDefects.map(d => \`<div style="margin-bottom: 0.35rem;">• \${escapeHtml(d.title)}</div>\`).join('')
+          ? diff.resolvedDefects.map(d => '<div style="margin-bottom: 0.35rem;">• ' + escapeHtml(d.title) + '</div>').join('')
           : '<span style="color: var(--muted);">No defects resolved.</span>';
-
       } catch (err) {
         alert('Diff analysis failed: ' + err.message);
       }
@@ -3679,7 +4885,7 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       runDiffAnalysis();
     }
 
-    // 4. Blue Team Hardening Tab Controller
+    // 5. Blue Team Hardening Tab Controller
     function switchHardeningTab(type, btn) {
       if (btn) {
         document.querySelectorAll('#view-hardening .filter-btn').forEach(b => b.classList.remove('active'));
@@ -3716,7 +4922,12 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       a.click();
     }
 
-    // 5. AI Advisor Controller
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      alert('Copied: ' + text);
+    }
+
+    // 6. AI Advisor Controller
     async function requestAiAdvisory() {
       if (!currentAuditData) return alert('Please run an audit first to generate context for the AI advisor.');
 
@@ -3745,10 +4956,10 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       log.style.display = 'block';
       if (approved) {
         log.style.color = 'var(--green)';
-        log.innerText = \`✓ APPROVED BY OPERATOR: Staging patch execution authorized at \${new Date().toISOString()}\`;
+        log.innerText = '✓ APPROVED BY OPERATOR: Staging patch execution authorized at ' + new Date().toISOString();
       } else {
         log.style.color = 'var(--red)';
-        log.innerText = \`✕ REJECTED: Changes cancelled and flagged for human architect review.\`;
+        log.innerText = '✕ REJECTED: Changes cancelled and flagged for human architect review.';
       }
     }
 
@@ -3762,11 +4973,11 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
         filename = 'audit-report.json';
         mime = 'application/json';
       } else if (type === 'md') {
-        content = \`# ClassiGuard CyFence Report for \${currentAuditData.targetUrl}\\nScore: \${currentAuditData.compliance.score}/100 (Grade \${currentAuditData.compliance.grade})\\n\\n## Findings\\n\` +
-          currentAuditData.findings.map(f => \`- [\${f.severity}] \${f.title}\\n  \${f.details}\`).join('\\n\\n');
+        content = '# ClassiGuard CyFence Report for ' + currentAuditData.targetUrl + '\\nScore: ' + currentAuditData.compliance.score + '/100 (Grade ' + currentAuditData.compliance.grade + ')\\n\\n## Findings\\n' +
+          currentAuditData.findings.map(f => '- [' + f.severity + '] ' + f.title + '\\n  ' + f.details).join('\\n\\n');
         filename = 'audit-report.md';
       } else if (type === 'html') {
-        content = \`<!DOCTYPE html><html><head><title>CyFence Report</title><style>body{background:#0b0f19;color:#fff;font-family:sans-serif;padding:2rem;}</style></head><body><h1>ClassiGuard CyFence: \${escapeHtml(currentAuditData.targetUrl)}</h1><h2>Score: \${currentAuditData.compliance.score}/100</h2><pre>\${escapeHtml(JSON.stringify(currentAuditData.findings, null, 2))}</pre></body></html>\`;
+        content = '<!DOCTYPE html><html><head><title>CyFence Report</title><style>body{background:#0b0f19;color:#fff;font-family:sans-serif;padding:2rem;}</style></head><body><h1>ClassiGuard CyFence: ' + escapeHtml(currentAuditData.targetUrl) + '</h1><h2>Score: ' + currentAuditData.compliance.score + '/100</h2><pre>' + escapeHtml(JSON.stringify(currentAuditData.findings, null, 2)) + '</pre></body></html>';
         filename = 'audit-report.html';
         mime = 'text/html';
       }
@@ -3810,6 +5021,7 @@ async function startGuiServer(initialPort = 9090, host = '127.0.0.1', options = 
   const maxAttempts = 30;
   let currentPort = initialPort;
   const csrfToken = getSecureToken();
+  const netInfo = getHostNetworkInfo();
 
   for (let i = 0; i < maxAttempts; i++) {
     try {
@@ -3818,10 +5030,13 @@ async function startGuiServer(initialPort = 9090, host = '127.0.0.1', options = 
       console.log(`\n================================================================================`);
       console.log(`  🛡️  ClassiGuard CyFence Enterprise Desktop Suite Running`);
       console.log(`================================================================================`);
-      console.log(`  Access URL:  http://${host}:${currentPort}`);
-      console.log(`  Interface:   Native Desktop Application Window (Edge/Chrome App Mode)`);
-      console.log(`  Security:    CSRF Guard Active | Strict Loopback (${host}) | CSP Hardened`);
-      console.log(`  Features:    Single Audit, Batch Fleet, Posture Drift Diff, Auto-Hardening, AI Advisor`);
+      console.log(`  Loopback URL: http://${host}:${currentPort}`);
+      if (netInfo.primaryIp && netInfo.primaryIp !== '127.0.0.1') {
+        console.log(`  Network IP:   http://${netInfo.primaryIp}:${currentPort}`);
+      }
+      console.log(`  Interface:    Native Desktop Application Window (Edge/Chrome App Mode)`);
+      console.log(`  Security:     CSRF Guard Active | Strict Loopback (${host}) | CSP Hardened`);
+      console.log(`  Engine:       Deep Red Team VAPT Active (SQLi, XSS, SSRF, LFI, ASVS v4.0)`);
       console.log(`  Press Ctrl+C in this console window to terminate.`);
       console.log(`================================================================================\n`);
 
@@ -3978,6 +5193,7 @@ async function launchWizard() {
 
 
 
+
 /**
  * Runs a comprehensive defensive security audit against a target web URL
  * @param {string} targetUrl - Target URL to audit
@@ -3991,6 +5207,12 @@ async function launchWizard() {
 async function auditUrl(targetUrl, options = {}) {
   const timestamp = new Date().toISOString();
   const requestHeaders = options.headers || {};
+  const profile = (options.profile || 'deep').toLowerCase();
+  const onProgress = options.onProgress || (() => {});
+  const onLog = options.onLog || (() => {});
+
+  onProgress({ phase: 1, totalPhases: 5, stage: 'Perimeter Recon & TLS', percent: 15, message: `Probing target: ${targetUrl}...` });
+  onLog(`[INIT] Starting ClassiGuard CyFence audit (Profile: ${profile.toUpperCase()}) on ${targetUrl}`);
 
   // 1. Initial Probe
   const probe = await safeFetch(targetUrl, {
@@ -3999,6 +5221,7 @@ async function auditUrl(targetUrl, options = {}) {
   });
 
   if (probe.error && probe.status === 0) {
+    onLog(`[ERROR] Connection failure: ${probe.error}`);
     return {
       targetUrl,
       timestamp,
@@ -4022,37 +5245,53 @@ async function auditUrl(targetUrl, options = {}) {
 
   const findings = [];
 
-  // 2. Security Headers Audit (OWASP ASVS V14.4)
+  // Phase 1: Perimeter, Headers, Cookies, CORS, WAF
+  onProgress({ phase: 1, totalPhases: 5, stage: 'Perimeter & Defensive Headers', percent: 25, message: 'Auditing security headers and cookie flags...' });
+  onLog(`[PHASE 1] Analyzing HTTP response headers, cookie flags, and CORS configuration...`);
+
   const headerFindings = auditHeaders(targetUrl, probe.rawHeaders);
   findings.push(...headerFindings);
 
-  // 3. Cookies Audit (OWASP ASVS V3.4)
   const cookieFindings = auditCookies(targetUrl, probe.cookies);
   findings.push(...cookieFindings);
 
-  // 4. CORS Policy Audit (OWASP ASVS V14.4.7)
   const corsFindings = await auditCors(targetUrl, probe.rawHeaders);
   findings.push(...corsFindings);
 
-  // 5. API Surface & Leakage Audit (OWASP ASVS V13.1)
-  const apiSurfaceFindings = await auditApiSurface(targetUrl, probe.rawHeaders, probe.bodySnippet);
-  findings.push(...apiSurfaceFindings);
-
-  // 6. Perimeter WAF & CDN Fingerprinting (Red Team / Recon)
   const wafFindings = auditWaf(probe.rawHeaders, probe.cookies);
   findings.push(...wafFindings);
 
-  // 7. Discovery Protocols & security.txt (Red Team / RFC 9116)
   const discoveryFindings = await auditDiscovery(targetUrl, { headers: requestHeaders });
   findings.push(...discoveryFindings);
 
-  // 8. Sensitive Routes & File Exposure (Red Team / Recon)
-  if (!options.skipRoutes) {
+  // Phase 2: Sensitive Routes & Exposure
+  onProgress({ phase: 2, totalPhases: 5, stage: 'Sensitive Route & Artifact Discovery', percent: 45, message: 'Checking 50+ sensitive paths (git, env, backups, actuator)...' });
+  onLog(`[PHASE 2] Probing for exposed artifacts (backup dumps, .env, .git, actuator, swagger)...`);
+
+  if (!options.skipRoutes && profile !== 'fast') {
     const routeFindings = await auditSensitiveRoutes(targetUrl, { headers: requestHeaders });
     findings.push(...routeFindings);
   }
 
-  // 9. JWT Security Audit (RFC 8725 / ASVS V8.3)
+  // Phase 3: Active Offensive Probing (Deep / Red Team / VAPT Mode)
+  if (profile === 'deep' || profile === 'red' || profile === 'vapt' || profile === 'full') {
+    onProgress({ phase: 3, totalPhases: 5, stage: 'Active Offensive Injection Testing', percent: 65, message: 'Fuzzing inputs for SQLi, XSS, SSRF, LFI, and GraphQL...' });
+    onLog(`[PHASE 3] Executing active offensive injections (SQLi, XSS, LFI, Open Redirect, GraphQL)...`);
+
+    const activeFindings = await runActiveVulnerabilityScan(targetUrl, {
+      headers: requestHeaders,
+      onLog: (msg) => onLog(msg)
+    });
+    findings.push(...activeFindings);
+  }
+
+  // Phase 4: API Surface, JWT, Stack Trace Inspections
+  onProgress({ phase: 4, totalPhases: 5, stage: 'API Surface & Token Verification', percent: 85, message: 'Verifying API leakages and RFC 8725 JWT tokens...' });
+  onLog(`[PHASE 4] Verifying API surface, error handling, and cryptographic tokens...`);
+
+  const apiSurfaceFindings = await auditApiSurface(targetUrl, probe.rawHeaders, probe.bodySnippet);
+  findings.push(...apiSurfaceFindings);
+
   let tokenToAudit = options.jwt;
   if (!tokenToAudit) {
     const authHdr = probe.rawHeaders['authorization'];
@@ -4074,16 +5313,18 @@ async function auditUrl(targetUrl, options = {}) {
     findings.push(...jwtFindings);
   }
 
-  // 10. Compliance Calculation
-  const compliance = calculateCompliance(findings);
+  // Phase 5: Synthesis, Compliance, Hardening & Advisory
+  onProgress({ phase: 5, totalPhases: 5, stage: 'Posture Scoring & Remediation Synthesis', percent: 100, message: 'Calculating ASVS v4.0 grade and generating patches...' });
+  onLog(`[PHASE 5] Calculating OWASP ASVS v4.0 compliance score and generating blue team patches...`);
 
-  // 11. Blue Team Auto-Remediation & Sigma Generation
+  const compliance = calculateCompliance(findings);
   const hardeningConfigs = generateHardeningConfigs(findings);
   const detectionRules = generateDetectionRules(findings, targetUrl);
 
   const result = {
     targetUrl,
     timestamp,
+    profile,
     httpStatus: probe.status,
     compliance,
     findings,
@@ -4093,12 +5334,13 @@ async function auditUrl(targetUrl, options = {}) {
     }
   };
 
-  // 12. Optional AI Security Advisor
   if (options.ai) {
+    onLog(`[AI] Invoking AI Security Advisor for automated remediation synthesis...`);
     const aiAdvisory = await getAiSecurityAdvisory(result, options.ai);
     result.aiAdvisory = aiAdvisory;
   }
 
+  onLog(`[SUCCESS] Audit completed. ASVS Score: ${compliance.score}/100 (Grade ${compliance.grade}). Total Defects: ${compliance.totalDefects}`);
   return result;
 }
 

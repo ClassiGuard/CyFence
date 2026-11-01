@@ -18,16 +18,32 @@
 
 ---
 
-## 🌟 How to Run ClassiGuard CyFence (One-Click Launch)
+## 🌟 How to Install & Run ClassiGuard CyFence
 
-ClassiGuard CyFence is packaged as a **single, self-contained standalone executable**. You do **not** need to install Node.js, configure dependencies, or run terminal commands.
+ClassiGuard CyFence is packaged as a **single, self-contained standalone executable** and includes an automated **1-Click Windows Desktop Installer**. You do **not** need to install Node.js, configure dependencies, or run complex terminal commands.
 
-### 🚀 Execution Method
+### 🚀 Option A: 1-Click Windows Desktop Installation (Recommended)
+
+To install CyFence like a standard desktop application with a Desktop Icon and **ZERO background command prompt windows**:
+
+1. Download the release repository or zip.
+2. Double-click **`install.bat`** (or execute `.\install.ps1`).
+3. **What the Installer does automatically:**
+   * Installs application files to `%LOCALAPPDATA%\Programs\ClassiGuard-CyFence\`.
+   * Creates a **Desktop Shortcut** named `ClassiGuard CyFence.lnk`.
+   * Creates a **Start Menu Shortcut** in Windows Programs.
+   * Configures the **Silent Background Launcher** (`cyfence-desktop.vbs`), ensuring **NO black command prompt window pop-up appears**.
+   * Adds `cyfence` to your user `PATH` for convenience.
+   * Generates a clean 1-click **`uninstall.bat`**.
+
+---
+
+### 🚀 Option B: Portable Standalone Executable (Double-Click)
 
 ```
                ┌────────────────────────────────────────────────────────┐
                │                  DOWNLOAD & DOUBLE-CLICK               │
-               │                    dist/cyfence.exe                    │
+               │               cyfence.exe (or install.bat)             │
                └───────────────────────────┬────────────────────────────┘
                                            │
                                            ▼
@@ -35,14 +51,14 @@ ClassiGuard CyFence is packaged as a **single, self-contained standalone executa
                │           AUTOMATIC DESKTOP GUI INITIALIZATION         │
                │  • Background server starts on http://127.0.0.1:9090   │
                │  • Dedicated Desktop Window launches (Edge/Chrome App) │
-               │  • Ephemeral CSRF guard and loopback isolation active  │
+               │  • Real Host Network IP & Loopback interfaces active   │
                │  • Dynamic port failover & single-instance management  │
                └───────────────────────────┬────────────────────────────┘
                                            │
                                            ▼
                ┌────────────────────────────────────────────────────────┐
-               │            COMPLETE DEFENSIVE SECURITY SUITE           │
-               │       All features accessible via point-and-click!     │
+               │       DEEP RED TEAM VAPT & POSTURE DEFENSE SUITE       │
+               │  Active SQLi, XSS, SSRF, LFI, GraphQL & ASVS v4.0      │
                └────────────────────────────────────────────────────────┘
 ```
 
@@ -50,13 +66,13 @@ ClassiGuard CyFence is packaged as a **single, self-contained standalone executa
    * Windows: Download **[`dist/cyfence.exe`](dist/cyfence.exe)**
    * Linux: Download **[`dist/classiguard-cyfence-linux.tar.gz`](dist/classiguard-cyfence-linux.tar.gz)**
 2. **Launch the Application**:
-   * **Windows:** Simply **double-click `cyfence.exe`** (or run `.\cyfence.exe` in terminal).
+   * **Windows Desktop:** Simply double-click your **ClassiGuard CyFence** Desktop icon, or double-click `cyfence.exe`.
    * **Linux:** Extract the archive and execute `./cyfence`.
-3. **Desktop App Experience**:
-   * CyFence immediately starts its embedded, air-gapped server on `http://127.0.0.1:9090` and **automatically opens a dedicated, frameless desktop application window** (Edge/Chrome App Mode with no browser tabs, no URL bar, and dedicated Windows taskbar group).
+3. **Standard Desktop App Experience**:
+   * CyFence immediately starts its embedded, air-gapped server and **automatically opens a dedicated, frameless desktop application window** (Edge/Chrome App Mode with no browser tabs, no URL bar, and dedicated Windows taskbar grouping).
    * **Dynamic Port Failover:** If port 9090 is in use, CyFence dynamically finds the next available port (9091, 9092, etc.) so it never crashes.
    * **Single-Instance Protection:** Launching `cyfence.exe` a second time brings the existing desktop window into focus instead of creating duplicate background processes.
-   * All options and operations are performed visually through the desktop GUI.
+   * **Zero-Console Silent Mode:** When launched via the Desktop shortcut or `cyfence-desktop.vbs`, the application runs completely headless in the background without any CMD pop-up window.
 
 ---
 
@@ -64,17 +80,29 @@ ClassiGuard CyFence is packaged as a **single, self-contained standalone executa
 
 Every capability of the engine is accessible directly through the visual tabs:
 
-### 1. 🚀 Single Target Security Audit
-* **Enter Target URL**: Type or paste any endpoint (e.g. `https://example.com` or local intranet).
-* **Point-and-Click Controls**:
-  * Toggle sensitive route checks (`/.git`, `/.env`, Spring Boot Actuator).
-  * Check for JWT RFC 8725 compliance by pasting tokens.
-  * Send custom audit headers via a simple input box.
-* **Instant Export Buttons**:
-  * Click **Export HTML** to download a visual, styled report.
-  * Click **Export JSON** for machine-readable raw data.
-  * Click **Export MD** for GitHub-flavored Markdown summaries.
-* **Filter Findings**: Click badges to filter between **Critical**, **High**, **Medium**, **Low**, and **Passed** controls.
+### 1. 🚀 Deep Red Team VAPT & Single Target Audit
+* **Scan Profile Selector**:
+  * 🔴 **Deep Red Team VAPT (Full Injections)**: Active recursive HTML crawling, SQL Injection fuzzing (15+ DB error signatures), Reflected XSS probing, Local File Inclusion (LFI / Path Traversal), Open Redirection, and GraphQL Introspection.
+  * 🛡️ **Standard ASVS Audit**: Full OWASP ASVS v4.0 baseline across 50+ sensitive metadata paths, CORS policies, JWT compliance (RFC 8725), and HTTP verb tampering.
+  * ⚡ **Quick Recon**: High-speed perimeter verification and TLS headers.
+* **Interactive Multi-Stage Progress Stepper**:
+  * Visual 5-phase tracker: `① Recon & TLS` $\rightarrow$ `② Endpoint Spider` $\rightarrow$ `③ Active Injections` $\rightarrow$ `④ API & GraphQL` $\rightarrow$ `⑤ Posture Grading`.
+* **Live Cyber Streaming Console**:
+  * Real-time dark-mode terminal showing every probe, URL parameter, and payload evaluation as it happens.
+* **Exploit Proof-of-Concept (PoC) Drawers**:
+  * Every confirmed injection finding includes a detailed **PoC Box** containing the vulnerable parameter, injected payload, database engine detected, raw response snippet evidence, and reproducible URL.
+* **Instant Report Exports**:
+  * Export visual, styled **HTML Reports**, machine-readable **JSON**, or GitHub-flavored **Markdown**.
+
+### 2. 🔌 Custom API & Network Engine
+* **Custom REST API & OpenAPI Tester**:
+  * Ingest any **OpenAPI 3.0 / Swagger specification** via live URL or paste raw JSON/YAML.
+  * Automatically extracts endpoints, HTTP methods, and parameter definitions ready for fleet fuzzing.
+* **Host Network Adapter Inspector**:
+  * Displays all active IPv4 network adapters on your host machine (e.g. `Wi-Fi: 192.168.x.x`, `Ethernet: 10.x.x.x`, `Loopback: 127.0.0.1`) with 1-click IP copy buttons.
+* **Bring Your Own AI API (BYOK)**:
+  * Configure your own **OpenAI**, **Anthropic Claude**, **Google Gemini**, or **Ollama** API keys, custom models, and endpoints.
+  * Test AI connectivity live with the built-in diagnostic test button. Settings persist securely in local storage.
 
 ### 2. 📋 Multi-Target Fleet Batch Auditing
 * **No text files needed**: Paste multiple URLs directly into the browser text area (or click **Load Sample Targets**).
