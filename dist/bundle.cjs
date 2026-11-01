@@ -1,10 +1,17 @@
 // ClassiGuard CyFence Standalone Zero-Dependency Executable Bundle
-// Generated: 2026-10-24T16:26:46.449Z
+// Generated: 2026-11-01T04:23:41.200Z
 
-const fs = require('node:fs/promises');
+const fs = Object.assign(require('node:fs/promises'), require('node:fs'));
 const path = require('node:path');
 const http = require('node:http');
+const https = require('node:https');
 const readline = require('node:readline');
+const crypto = require('node:crypto');
+const child_process = require('node:child_process');
+const { exec, spawn, execSync } = child_process;
+const os = require('node:os');
+const net = require('node:net');
+const { URL, URLSearchParams } = require('node:url');
 
 
 // --- Start: src/utils/scoring.mjs ---
@@ -2689,6 +2696,7 @@ async function writeBatchHtmlReport(batchResults, filePath) {
 
 
 
+
 /**
  * Defensive Security Headers enforced on all Web GUI HTTP responses
  */
@@ -2701,39 +2709,138 @@ const DEFENSIVE_HEADERS = {
 };
 
 /**
- * Opens a URL in the user's default web browser across Windows, macOS, and Linux
+ * Resilient cryptographic token generator with defensive fallbacks
+ * @returns {string} Hex encoded security token
+ */
+function getSecureToken() {
+  try {
+    if (typeof crypto !== 'undefined') {
+      if (typeof crypto.randomBytes === 'function') {
+        return crypto.randomBytes(24).toString('hex');
+      }
+      if (typeof crypto.getRandomValues === 'function') {
+        const buf = new Uint8Array(24);
+        crypto.getRandomValues(buf);
+        return Buffer.from(buf).toString('hex');
+      }
+    }
+  } catch {}
+  return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+/**
+ * Launches the application URL in a native desktop window (Edge or Chrome App Mode),
+ * giving a clean, standalone, frameless desktop application experience without browser bars or tabs.
+ * Falls back to default system browser if Chromium app mode is unavailable.
  * @param {string} url - Target URL to launch
  */
-function openBrowser(url) {
+function openDesktopWindow(url) {
   try {
     const platform = process.platform;
-    let cmd = '';
     if (platform === 'win32') {
-      cmd = `start "" "${url}"`;
+      const candidates = [
+        `${process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)'}\\Microsoft\\Edge\\Application\\msedge.exe`,
+        `${process.env['PROGRAMFILES'] || 'C:\\Program Files'}\\Microsoft\\Edge\\Application\\msedge.exe`,
+        `${process.env['LOCALAPPDATA'] || ''}\\Microsoft\\Edge\\Application\\msedge.exe`,
+        `${process.env['PROGRAMFILES'] || 'C:\\Program Files'}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)'}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${process.env['LOCALAPPDATA'] || ''}\\Google\\Chrome\\Application\\chrome.exe`
+      ];
+
+      for (const exe of candidates) {
+        if (exe && fs.existsSync(exe)) {
+          spawn(exe, [`--app=${url}`, '--window-size=1280,840'], {
+            detached: true,
+            stdio: 'ignore'
+          }).unref();
+          return true;
+        }
+      }
+
+      exec(`start "" "${url}"`, () => {});
+      return true;
     } else if (platform === 'darwin') {
-      cmd = `open "${url}"`;
+      const candidates = [
+        '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+      ];
+      for (const exe of candidates) {
+        if (fs.existsSync(exe)) {
+          spawn(exe, [`--app=${url}`, '--window-size=1280,840'], {
+            detached: true,
+            stdio: 'ignore'
+          }).unref();
+          return true;
+        }
+      }
+      exec(`open "${url}"`, () => {});
+      return true;
     } else {
-      cmd = `xdg-open "${url}"`;
+      const candidates = ['google-chrome', 'chromium-browser', 'chromium', 'microsoft-edge'];
+      for (const exe of candidates) {
+        try {
+          const child = spawn(exe, [`--app=${url}`, '--window-size=1280,840'], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+          return true;
+        } catch {}
+      }
+      exec(`xdg-open "${url}"`, () => {});
+      return true;
     }
-    exec(cmd, () => {});
   } catch {
-    // Graceful fallback if shell launch fails
+    try {
+      exec(`start "" "${url}"`, () => {});
+    } catch {}
+    return false;
   }
 }
 
 /**
- * Starts the embedded ClassiGuard CyFence Web GUI server
- * @param {number} [port=9090] - Port to listen on
- * @param {string} [host='127.0.0.1'] - Interface to bind on (defaults to loopback for security)
- * @param {object} [options] - Server options
- * @param {boolean} [options.autoOpen=false] - Whether to launch the browser automatically
- * @returns {Promise<http.Server>} Active HTTP server instance
+ * Backward compatibility alias for openDesktopWindow
  */
-function startGuiServer(port = 9090, host = '127.0.0.1', options = {}) {
-  return new Promise((resolve, reject) => {
-    // Generate an ephemeral cryptographic anti-CSRF token per server session
-    const csrfToken = crypto.randomBytes(24).toString('hex');
+function openBrowser(url) {
+  return openDesktopWindow(url);
+}
 
+/**
+ * Checks if another active instance of CyFence is already listening on a given port
+ * @param {number} port
+ * @param {string} host
+ * @returns {Promise<boolean>}
+ */
+function checkExistingCyFenceInstance(port, host) {
+  return new Promise((resolve) => {
+    const req = http.get({
+      host,
+      port,
+      path: '/',
+      timeout: 1000
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => {
+        body += chunk;
+        if (body.length > 2048) req.destroy();
+      });
+      res.on('end', () => {
+        resolve(body.includes('ClassiGuard CyFence'));
+      });
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+/**
+ * Creates and binds the HTTP server for the GUI dashboard on a specific port
+ */
+function createAndBindServer(port, host, csrfToken) {
+  return new Promise((resolve, reject) => {
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
       const pathname = url.pathname;
@@ -3035,12 +3142,12 @@ function startGuiServer(port = 9090, host = '127.0.0.1', options = {}) {
 
     <!-- Top Navigation Bar -->
     <nav class="nav-bar">
-      <button class="nav-btn active" onclick="switchView('view-single')">🚀 Single Audit</button>
-      <button class="nav-btn" onclick="switchView('view-batch')">📋 Multi-Target Batch</button>
-      <button class="nav-btn" onclick="switchView('view-diff')">⚖️ Drift & Diff</button>
-      <button class="nav-btn" onclick="switchView('view-hardening')">🛡️ Blue Team Auto-Patch</button>
-      <button class="nav-btn" onclick="switchView('view-ai')">🤖 AI Security Advisor</button>
-      <button class="nav-btn" onclick="switchView('view-tour')">📖 Tour & Architecture</button>
+      <button class="nav-btn active" data-view="view-single" onclick="switchView('view-single', this)">🚀 Single Audit</button>
+      <button class="nav-btn" data-view="view-batch" onclick="switchView('view-batch', this)">📋 Multi-Target Batch</button>
+      <button class="nav-btn" data-view="view-diff" onclick="switchView('view-diff', this)">⚖️ Drift & Diff</button>
+      <button class="nav-btn" data-view="view-hardening" onclick="switchView('view-hardening', this)">🛡️ Blue Team Auto-Patch</button>
+      <button class="nav-btn" data-view="view-ai" onclick="switchView('view-ai', this)">🤖 AI Security Advisor</button>
+      <button class="nav-btn" data-view="view-tour" onclick="switchView('view-tour', this)">📖 Tour & Architecture</button>
     </nav>
 
     <!-- VIEW 1: SINGLE TARGET AUDIT -->
@@ -3343,11 +3450,17 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
         .replace(/'/g, '&#039;');
     }
 
-    function switchView(viewId) {
+    function switchView(viewId, btn) {
       document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(viewId).classList.add('active');
-      event.target.classList.add('active');
+      const targetView = document.getElementById(viewId);
+      if (targetView) targetView.classList.add('active');
+      if (btn) {
+        btn.classList.add('active');
+      } else {
+        const matchingBtn = document.querySelector('.nav-btn[data-view="' + viewId + '"]');
+        if (matchingBtn) matchingBtn.classList.add('active');
+      }
     }
 
     document.getElementById('optCustomHeaders').addEventListener('change', (e) => {
@@ -3674,26 +3787,68 @@ cyfence.exe https://example.com --remediation --export-configs reports/hardening
       res.end('Not Found');
     });
 
+    server.once('error', (err) => {
+      reject(err);
+    });
+
     server.listen(port, host, () => {
+      resolve(server);
+    });
+  });
+}
+
+/**
+ * Starts the embedded ClassiGuard CyFence Web GUI server in Desktop Application Mode.
+ * Dynamically resolves port collisions and brings existing instances to focus.
+ * @param {number} [initialPort=9090] - Port to listen on (auto-increments if port is occupied)
+ * @param {string} [host='127.0.0.1'] - Interface to bind on (defaults to loopback for security)
+ * @param {object} [options] - Server options
+ * @param {boolean} [options.autoOpen=true] - Whether to launch desktop window automatically
+ * @returns {Promise<http.Server|null>} Active HTTP server instance or null if existing instance focused
+ */
+async function startGuiServer(initialPort = 9090, host = '127.0.0.1', options = {}) {
+  const maxAttempts = 30;
+  let currentPort = initialPort;
+  const csrfToken = getSecureToken();
+
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const server = await createAndBindServer(currentPort, host, csrfToken);
+
       console.log(`\n================================================================================`);
-      console.log(`  🛡️  ClassiGuard CyFence Enterprise Web GUI Suite Running`);
+      console.log(`  🛡️  ClassiGuard CyFence Enterprise Desktop Suite Running`);
       console.log(`================================================================================`);
-      console.log(`  Access URL:  http://${host}:${port}`);
-      console.log(`  Mode:        100% Offline / Air-Gapped Ready (Zero external dependencies)`);
+      console.log(`  Access URL:  http://${host}:${currentPort}`);
+      console.log(`  Interface:   Native Desktop Application Window (Edge/Chrome App Mode)`);
       console.log(`  Security:    CSRF Guard Active | Strict Loopback (${host}) | CSP Hardened`);
       console.log(`  Features:    Single Audit, Batch Fleet, Posture Drift Diff, Auto-Hardening, AI Advisor`);
-      console.log(`  Press Ctrl+C to terminate dashboard server.`);
+      console.log(`  Press Ctrl+C in this console window to terminate.`);
       console.log(`================================================================================\n`);
 
       if (options.autoOpen !== false) {
-        openBrowser(`http://${host}:${port}`);
+        openDesktopWindow(`http://${host}:${currentPort}`);
       }
 
-      resolve(server);
-    });
-
-    server.on('error', reject);
-  });
+      return server;
+    } catch (err) {
+      if (err.code === 'EADDRINUSE') {
+        const isCyFence = await checkExistingCyFenceInstance(currentPort, host);
+        if (isCyFence) {
+          console.log(`\nℹ️  ClassiGuard CyFence is already running at http://${host}:${currentPort}`);
+          console.log(`   Bringing up native desktop application window to existing instance...`);
+          if (options.autoOpen !== false) {
+            openDesktopWindow(`http://${host}:${currentPort}`);
+          }
+          return null;
+        }
+        console.log(`Port ${currentPort} occupied by another service. Trying port ${currentPort + 1}...`);
+        currentPort++;
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error(`Unable to bind to an available port after ${maxAttempts} attempts starting from ${initialPort}.`);
 }
 
 // --- End: src/server/guiServer.mjs ---
@@ -3965,6 +4120,7 @@ async function auditUrl(targetUrl, options = {}) {
 
 
 
+
 function printHelp() {
   console.log(`
 ClassiGuard CyFence: Enterprise Defensive Web Security & Posture Auditor
@@ -4087,15 +4243,18 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    const port = 9090;
+    const initialPort = 9090;
     console.log(`\n================================================================================`);
-    console.log(`  🛡️  ClassiGuard CyFence: Enterprise Web Security Suite`);
+    console.log(`  🛡️  ClassiGuard CyFence: Enterprise Desktop Security Suite`);
     console.log(`================================================================================`);
-    console.log(`  No CLI arguments specified. Auto-launching the full Web GUI Dashboard...`);
-    console.log(`  Target Interface: http://127.0.0.1:${port}`);
+    console.log(`  Initializing ClassiGuard CyFence in Desktop Application Mode...`);
+    console.log(`  Target Interface: http://127.0.0.1:${initialPort}`);
     console.log(`  Press Ctrl+C in this console window to exit.`);
     console.log(`================================================================================\n`);
-    await startGuiServer(port, '127.0.0.1', { autoOpen: true });
+    const server = await startGuiServer(initialPort, '127.0.0.1', { autoOpen: true });
+    if (!server) {
+      process.exit(0);
+    }
     return;
   }
 
@@ -4113,7 +4272,10 @@ async function main() {
   // Subcommand: gui or serve
   if (args[0] === 'gui' || args[0] === 'serve') {
     const port = parseInt(args[1], 10) || 9090;
-    await startGuiServer(port, '127.0.0.1', { autoOpen: true });
+    const server = await startGuiServer(port, '127.0.0.1', { autoOpen: true });
+    if (!server) {
+      process.exit(0);
+    }
     return;
   }
 
@@ -4240,8 +4402,14 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error(`Fatal error: ${err.message}`);
+main().catch(async (err) => {
+  console.error(`\n❌ Fatal error: ${err.message}`);
+  if (err.stack) console.error(err.stack);
+  if (process.stdin.isTTY) {
+    console.log('\nPress Enter to exit...');
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    await new Promise(resolve => rl.question('', () => { rl.close(); resolve(); }));
+  }
   process.exit(1);
 });
 

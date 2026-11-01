@@ -16,6 +16,7 @@ reports/
 # Exclude internal build intermediates
 *.blob
 dist/sea-prep.blob
+dist/linux/
 *.log
 node_modules/
 

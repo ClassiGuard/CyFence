@@ -32,10 +32,11 @@ ClassiGuard CyFence is packaged as a **single, self-contained standalone executa
                                            │
                                            ▼
                ┌────────────────────────────────────────────────────────┐
-               │           AUTOMATIC WEB GUI INITIALIZATION             │
+               │           AUTOMATIC DESKTOP GUI INITIALIZATION         │
                │  • Background server starts on http://127.0.0.1:9090   │
-               │  • System default web browser launches automatically   │
+               │  • Dedicated Desktop Window launches (Edge/Chrome App) │
                │  • Ephemeral CSRF guard and loopback isolation active  │
+               │  • Dynamic port failover & single-instance management  │
                └───────────────────────────┬────────────────────────────┘
                                            │
                                            ▼
@@ -51,9 +52,11 @@ ClassiGuard CyFence is packaged as a **single, self-contained standalone executa
 2. **Launch the Application**:
    * **Windows:** Simply **double-click `cyfence.exe`** (or run `.\cyfence.exe` in terminal).
    * **Linux:** Extract the archive and execute `./cyfence`.
-3. **Use the Application**:
-   * CyFence immediately starts its embedded, air-gapped server on `http://127.0.0.1:9090` and **automatically opens your web browser**.
-   * All options and operations are performed visually through the Web GUI.
+3. **Desktop App Experience**:
+   * CyFence immediately starts its embedded, air-gapped server on `http://127.0.0.1:9090` and **automatically opens a dedicated, frameless desktop application window** (Edge/Chrome App Mode with no browser tabs, no URL bar, and dedicated Windows taskbar group).
+   * **Dynamic Port Failover:** If port 9090 is in use, CyFence dynamically finds the next available port (9091, 9092, etc.) so it never crashes.
+   * **Single-Instance Protection:** Launching `cyfence.exe` a second time brings the existing desktop window into focus instead of creating duplicate background processes.
+   * All options and operations are performed visually through the desktop GUI.
 
 ---
 
