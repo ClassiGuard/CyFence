@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom sleek scrollbar for internal views */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.5); }
+    .fade-in { animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground,#f9fafb)] antialiased p-2">
+  <div class="bg-[var(--card,#111827)] text-[var(--foreground,#f9fafb)] border border-[var(--border,#1f2937)] rounded-xl p-4 shadow-xl max-w-2xl mx-auto space-y-3">
+    
+    <!-- Header with Live Branding & Status -->
+    <div class="flex items-center justify-between border-b border-[var(--border,#1f2937)] pb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-lg shadow-inner">
+          🛡️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-white tracking-tight">ClassiGuard CyFence &bull; Interactive Product Tour</h2>
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Single Exe Web Suite</span>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">Click any tour tab below to test the defensive capabilities interactively</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span id="tourStepBadge" class="px-2 py-0.5 rounded text-xs font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30">
+          Step 1 of 6
+        </span>
+      </div>
+    </div>
+
+    <!-- Quick Tab Bar for All Product Operations -->
+    <div class="grid grid-cols-6 gap-1 bg-[var(--background,#0b0f19)] p-1 rounded-lg border border-[var(--border,#1f2937)] text-xs font-medium">
+      <button onclick="setTourTab(1)" id="tabNav-1" class="tab-btn py-1.5 px-1 rounded text-center transition-all bg-blue-600 text-white font-semibold truncate">
+        1. Double-Click
+      </button>
+      <button onclick="setTourTab(2)" id="tabNav-2" class="tab-btn py-1.5 px-1 rounded text-center transition-all text-[var(--muted-foreground,#9ca3af)] hover:text-white truncate">
+        2. Single Audit
+      </button>
+      <button onclick="setTourTab(3)" id="tabNav-3" class="tab-btn py-1.5 px-1 rounded text-center transition-all text-[var(--muted-foreground,#9ca3af)] hover:text-white truncate">
+        3. Fleet Batch
+      </button>
+      <button onclick="setTourTab(4)" id="tabNav-4" class="tab-btn py-1.5 px-1 rounded text-center transition-all text-[var(--muted-foreground,#9ca3af)] hover:text-white truncate">
+        4. Drift Diff
+      </button>
+      <button onclick="setTourTab(5)" id="tabNav-5" class="tab-btn py-1.5 px-1 rounded text-center transition-all text-[var(--muted-foreground,#9ca3af)] hover:text-white truncate">
+        5. Blue Team
+      </button>
+      <button onclick="setTourTab(6)" id="tabNav-6" class="tab-btn py-1.5 px-1 rounded text-center transition-all text-[var(--muted-foreground,#9ca3af)] hover:text-white truncate">
+        6. AI Approval
+      </button>
+    </div>
+
+    <!-- Interactive Stage / Viewport (Bounded Height) -->
+    <div id="tourStage" class="bg-[var(--background,#0b0f19)] border border-[var(--border,#1f2937)] rounded-xl p-3 min-h-[265px] max-h-[275px] overflow-y-auto">
+      
+      <!-- TAB 1: ONE-CLICK DESKTOP LAUNCH -->
+      <div id="tabContent-1" class="tab-pane fade-in space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🖱️</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">Zero Setup &bull; Double-Click Launch</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">
+            Zero CLI Required
+          </span>
+        </div>
+
+        <p class="text-xs text-[var(--muted-foreground,#9ca3af)] leading-relaxed">
+          ClassiGuard CyFence packages the entire defensive engine, offline Sigma rules, and Web GUI into a <strong>single standalone executable (<code class="text-cyan-300">cyfence.exe</code>)</strong>. No installation, runtime dependencies, or command prompts required.
+        </p>
+
+        <!-- Interactive Launch Simulator -->
+        <div class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono text-gray-300 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> dist/cyfence.exe
+            </span>
+            <button onclick="simulateExecutableLaunch()" id="launchSimBtn" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5 transition-all">
+              <span>▶</span> Double-Click to Launch
+            </button>
+          </div>
+
+          <div id="launchTerminalBox" class="bg-black/60 border border-gray-800 rounded p-2 text-xs font-mono space-y-1 text-gray-400">
+            <div>Click "Double-Click to Launch" to preview the automatic startup sequence...</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-xs text-center">
+          <div class="p-2 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-emerald-400 font-bold">127.0.0.1:9090</div>
+            <div class="text-[var(--muted-foreground,#9ca3af)]">Loopback Only</div>
+          </div>
+          <div class="p-2 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-blue-400 font-bold">Anti-CSRF Nonce</div>
+            <div class="text-[var(--muted-foreground,#9ca3af)]">Browser Guard</div>
+          </div>
+          <div class="p-2 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-purple-400 font-bold">100% Offline</div>
+            <div class="text-[var(--muted-foreground,#9ca3af)]">Air-Gapped Ready</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SINGLE TARGET AUDIT SIMULATOR -->
+      <div id="tabContent-2" class="tab-pane hidden fade-in space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">🚀</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">Interactive Audit Simulator</span>
+          </div>
+          <div class="flex gap-1.5">
+            <button onclick="loadTargetPreset('insecure')" class="px-2 py-0.5 rounded text-xs bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 font-semibold">
+              Vulnerable (Grade F)
+            </button>
+            <button onclick="loadTargetPreset('hardened')" class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold">
+              Hardened (Grade A)
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <input type="text" id="simTargetInput" value="https://insecure-portal.local" class="flex-1 bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded px-2.5 py-1 text-xs text-white font-mono outline-none">
+          <button onclick="triggerSimulatedAudit()" id="runSimAuditBtn" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-sm">
+            Launch Audit
+          </button>
+        </div>
+
+        <!-- Score Summary Cards -->
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <div class="p-1.5 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)]">ASVS Score</div>
+            <div id="simScoreVal" class="text-base font-extrabold text-red-400">28 / 100</div>
+          </div>
+          <div class="p-1.5 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)]">Grade</div>
+            <div id="simGradeVal" class="text-base font-extrabold text-red-400">F</div>
+          </div>
+          <div class="p-1.5 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)]">Crit / High</div>
+            <div id="simCritVal" class="text-base font-extrabold text-red-500">4</div>
+          </div>
+          <div class="p-1.5 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)]">
+            <div class="text-xs text-[var(--muted-foreground,#9ca3af)]">Verified</div>
+            <div id="simPassVal" class="text-base font-extrabold text-emerald-400">1</div>
+          </div>
+        </div>
+
+        <!-- Finding Snippet -->
+        <div id="simFindingsList" class="bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] rounded p-2 text-xs space-y-1.5 max-h-24 overflow-y-auto">
+          <!-- Populated via script -->
+        </div>
+      </div>
+
+      <!-- TAB 3: FLEET BATCH AUDITING -->
+      <div id="tabContent-3" class="tab-pane hidden fade-in space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">📋</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">Multi-Target Fleet Matrix</span>
+          </div>
+          <button onclick="runBatchSimulation()" class="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-sm">
+            ▶ Run Fleet Batch Scan
+          </button>
+        </div>
+
+        <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">
+          Paste any number of target endpoints directly into the GUI. The engine audits concurrently, tracking fleet posture across microservices.
+        </p>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+          <div id="batchProgressBar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 100%;"></div>
+        </div>
+
+        <!-- Batch Matrix Table -->
+        <div class="border border-[var(--border,#1f2937)] rounded-lg overflow-hidden text-xs">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-[var(--card,#111827)] text-gray-400 text-left border-b border-[var(--border,#1f2937)]">
+                <th class="p-1.5">Target Endpoint</th>
+                <th class="p-1.5">Score</th>
+                <th class="p-1.5">Grade</th>
+                <th class="p-1.5">Critical</th>
+                <th class="p-1.5">High</th>
+                <th class="p-1.5">Status</th>
+              </tr>
+            </thead>
+            <tbody id="batchTableRows" class="divide-y divide-[var(--border,#1f2937)]">
+              <tr class="bg-black/30">
+                <td class="p-1.5 font-mono text-cyan-300">https://api.internal.corp</td>
+                <td class="p-1.5 font-bold">100/100</td>
+                <td class="p-1.5 text-emerald-400 font-bold">A</td>
+                <td class="p-1.5 text-gray-400">0</td>
+                <td class="p-1.5 text-gray-400">0</td>
+                <td class="p-1.5 text-emerald-400">Hardened</td>
+              </tr>
+              <tr class="bg-black/30">
+                <td class="p-1.5 font-mono text-cyan-300">https://auth.internal.corp</td>
+                <td class="p-1.5 font-bold">86/100</td>
+                <td class="p-1.5 text-blue-400 font-bold">B</td>
+                <td class="p-1.5 text-gray-400">0</td>
+                <td class="p-1.5 text-amber-400 font-bold">1</td>
+                <td class="p-1.5 text-blue-400">Minor Gap</td>
+              </tr>
+              <tr class="bg-black/30">
+                <td class="p-1.5 font-mono text-cyan-300">https://staging.internal.corp</td>
+                <td class="p-1.5 font-bold">32/100</td>
+                <td class="p-1.5 text-red-400 font-bold">F</td>
+                <td class="p-1.5 text-red-400 font-bold">3</td>
+                <td class="p-1.5 text-amber-400 font-bold">4</td>
+                <td class="p-1.5 text-red-400">Critical Risk</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: POSTURE DRIFT & REGRESSION DIFF -->
+      <div id="tabContent-4" class="tab-pane hidden fade-in space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">⚖️</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">Configuration Drift & Regression</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold font-mono">
+            +30 Points (IMPROVED)
+          </span>
+        </div>
+
+        <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">
+          Compare any two audit runs (e.g. baseline vs staging release) to catch security regressions before code ships to production.
+        </p>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <!-- New Regressions -->
+          <div class="p-2.5 rounded bg-red-950/20 border border-red-500/30 space-y-1">
+            <div class="font-bold text-red-400 flex items-center gap-1">
+              <span>🚨</span> New Defects / Regressions (0)
+            </div>
+            <div class="text-gray-300 text-xs">
+              ✨ Zero new vulnerabilities introduced since baseline.
+            </div>
+          </div>
+
+          <!-- Resolved Defects -->
+          <div class="p-2.5 rounded bg-emerald-950/20 border border-emerald-500/30 space-y-1">
+            <div class="font-bold text-emerald-400 flex items-center gap-1">
+              <span>✅</span> Resolved Vulnerabilities (2)
+            </div>
+            <div class="text-gray-300 text-xs space-y-0.5">
+              <div>• [CRITICAL] HSTS Policy Enforced</div>
+              <div>• [HIGH] Permissive CORS Wildcard Fixed</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-2 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] text-xs flex justify-between items-center text-gray-300">
+          <span>Baseline Score: <strong class="text-amber-400">55/100 (Grade C)</strong></span>
+          <span>→</span>
+          <span>Current Posture: <strong class="text-emerald-400">85/100 (Grade B)</strong></span>
+        </div>
+      </div>
+
+      <!-- TAB 5: BLUE TEAM AUTO-REMEDIATION & SIEM -->
+      <div id="tabContent-5" class="tab-pane hidden fade-in space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">🛡️</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">Blue Team: Instant Auto-Hardening</span>
+          </div>
+          <button onclick="copySnippetText()" id="copySnippetBtn" class="px-2.5 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-white font-mono text-xs border border-gray-600">
+            📋 Copy Snippet
+          </button>
+        </div>
+
+        <!-- Filter Sub-tabs -->
+        <div class="flex gap-1">
+          <button onclick="setHardeningSnippet('nginx')" id="hardNav-nginx" class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-600 text-white">Nginx</button>
+          <button onclick="setHardeningSnippet('apache')" id="hardNav-apache" class="px-2 py-0.5 rounded text-xs font-semibold bg-[var(--card,#111827)] text-gray-400 hover:text-white">Apache</button>
+          <button onclick="setHardeningSnippet('caddy')" id="hardNav-caddy" class="px-2 py-0.5 rounded text-xs font-semibold bg-[var(--card,#111827)] text-gray-400 hover:text-white">Caddy</button>
+          <button onclick="setHardeningSnippet('sigma')" id="hardNav-sigma" class="px-2 py-0.5 rounded text-xs font-semibold bg-[var(--card,#111827)] text-gray-400 hover:text-white">Sigma SIEM Rule</button>
+        </div>
+
+        <!-- Code Block -->
+        <pre class="bg-black/60 border border-[var(--border,#1f2937)] rounded p-2.5 text-xs text-cyan-300 font-mono overflow-x-auto max-h-32 leading-relaxed" id="hardeningCodeBox"></pre>
+      </div>
+
+      <!-- TAB 6: AI ADVISOR & HUMAN APPROVAL -->
+      <div id="tabContent-6" class="tab-pane hidden fade-in space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">🤖</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">AI Security Advisor & Human In The Loop</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-300 border border-amber-500/30 font-bold">
+            Zero Autonomous Decisions
+          </span>
+        </div>
+
+        <p class="text-xs text-[var(--muted-foreground,#9ca3af)]">
+          Supports <strong>Ollama (100% offline local Llama 3)</strong>, Claude, and OpenAI. Synthesizes contextual fixes, with mandatory operator approval:
+        </p>
+
+        <!-- AI Proposal Box -->
+        <div class="p-2.5 rounded bg-[var(--card,#111827)] border border-[var(--border,#1f2937)] text-xs space-y-1.5 font-mono">
+          <div class="text-purple-300 font-bold flex items-center justify-between">
+            <span>[Ollama llama3 &bull; Air-Gapped Proposal]</span>
+            <span class="text-gray-400 font-normal">Prompt Isolated</span>
+          </div>
+          <div class="text-gray-300 text-xs leading-relaxed">
+            "Recommended Patch: Add 'Strict-Transport-Security: max-age=31536000; includeSubDomains' to Nginx reverse proxy. Restrict CORS Access-Control-Allow-Origin to trusted portal origin."
+          </div>
+
+          <!-- Operator Approval Actions -->
+          <div class="pt-2 border-t border-gray-800 flex items-center justify-between">
+            <span id="approvalResultMsg" class="text-amber-400 font-semibold text-xs">
+              🔒 Status: Awaiting Human Engineer Review
+            </span>
+            <div class="flex gap-1.5">
+              <button onclick="submitApproval(false)" class="px-2.5 py-1 rounded bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 text-xs font-semibold">
+                ✕ Reject
+              </button>
+              <button onclick="submitApproval(true)" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm">
+                ✓ Approve for Staging
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tour Controls & Footer Navigation -->
+    <div class="flex items-center justify-between pt-2 border-t border-[var(--border,#1f2937)] text-xs">
+      <button onclick="prevTourTab()" class="px-3 py-1 rounded bg-[var(--background,#0b0f19)] hover:bg-gray-800 text-xs font-semibold border border-[var(--border,#1f2937)] text-gray-300 transition-all">
+        ← Previous Step
+      </button>
+
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        <span class="text-xs text-[var(--muted-foreground,#9ca3af)]">Click Next or any tab above</span>
+      </div>
+
+      <button onclick="nextTourTab()" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-sm transition-all">
+        Next Step →
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let activeTab = 1;
+    const totalTabs = 6;
+
+    const SNIPPETS = {
+      nginx: `## ClassiGuard CyFence Auto-Remediation: Nginx
+server {
+    server_tokens off;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none';" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+}`,
+      apache: `## ClassiGuard CyFence Auto-Remediation: Apache (.htaccess)
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self';"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>`,
+      caddy: `## ClassiGuard CyFence Auto-Remediation: Caddyfile
+example.corp {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Content-Security-Policy "default-src 'self';"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+    }
+}`,
+      sigma: `title: Web Application Probing Detected
+id: c1a55190-4d2b-4e6f-9a1b-78a42bcde89f
+status: experimental
+logsource:
+  category: webserver
+detection:
+  selection:
+    cs-uri-stem|contains:
+      - '/.git'
+      - '/.env'
+      - '/actuator'
+  condition: selection
+level: high`
+    };
+
+    let activeSnippetKey = 'nginx';
+
+    function setTourTab(step) {
+      activeTab = step;
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white', 'font-semibold');
+        b.classList.add('text-[var(--muted-foreground,#9ca3af)]');
+      });
+
+      const currentPane = document.getElementById(`tabContent-${step}`);
+      const currentBtn = document.getElementById(`tabNav-${step}`);
+      if (currentPane) currentPane.classList.remove('hidden');
+      if (currentBtn) {
+        currentBtn.classList.remove('text-[var(--muted-foreground,#9ca3af)]');
+        currentBtn.classList.add('bg-blue-600', 'text-white', 'font-semibold');
+      }
+
+      document.getElementById('tourStepBadge').innerText = `Step ${step} of ${totalTabs}`;
+    }
+
+    function nextTourTab() {
+      setTourTab(activeTab < totalTabs ? activeTab + 1 : 1);
+    }
+
+    function prevTourTab() {
+      setTourTab(activeTab > 1 ? activeTab - 1 : totalTabs);
+    }
+
+    // Tab 1: Simulator
+    function simulateExecutableLaunch() {
+      const box = document.getElementById('launchTerminalBox');
+      box.innerHTML = `
+        <div class="text-blue-400 font-bold">▶ Double-clicked: cyfence.exe</div>
+        <div class="text-gray-300">✓ Binding embedded server to 127.0.0.1:9090...</div>
+        <div class="text-emerald-400">✓ Generated anti-CSRF token nonce</div>
+        <div class="text-cyan-300 font-bold">🚀 Auto-launched default browser: http://127.0.0.1:9090</div>
+        <div class="text-emerald-400 font-bold">✨ Complete Web GUI Dashboard Ready!</div>
+      `;
+    }
+
+    // Tab 2: Single Audit Simulator
+    const TARGET_DATA = {
+      insecure: {
+        url: 'https://insecure-portal.local',
+        score: '28 / 100',
+        grade: 'F',
+        crit: '4',
+        pass: '1',
+        findings: [
+          { sev: 'CRITICAL', title: 'CORS Wildcard with Allow-Credentials Enabled (CWE-942)' },
+          { sev: 'CRITICAL', title: 'Missing HTTP Strict Transport Security (HSTS)' },
+          { sev: 'HIGH', title: 'Content-Security-Policy (CSP) Header Missing' },
+          { sev: 'HIGH', title: 'Cookie session_id missing Secure and HttpOnly flags' }
+        ]
+      },
+      hardened: {
+        url: 'https://hardened-app.corp',
+        score: '100 / 100',
+        grade: 'A',
+        crit: '0',
+        pass: '8',
+        findings: [
+          { sev: 'PASS', title: 'HSTS max-age=31536000 includeSubDomains preload verified' },
+          { sev: 'PASS', title: 'CSP default-src self active; frame-ancestors none' },
+          { sev: 'PASS', title: 'Clickjacking Protection (X-Frame-Options: DENY) Active' },
+          { sev: 'PASS', title: 'Cookies enforce Secure, HttpOnly, and SameSite=Strict' }
+        ]
+      }
+    };
+
+    function loadTargetPreset(type) {
+      const d = TARGET_DATA[type];
+      document.getElementById('simTargetInput').value = d.url;
+      renderAuditOutput(d);
+    }
+
+    function triggerSimulatedAudit() {
+      const url = document.getElementById('simTargetInput').value;
+      if (url.includes('hardened')) {
+        renderAuditOutput(TARGET_DATA.hardened);
+      } else {
+        renderAuditOutput(TARGET_DATA.insecure);
+      }
+    }
+
+    function renderAuditOutput(d) {
+      document.getElementById('simScoreVal').innerText = d.score;
+      document.getElementById('simGradeVal').innerText = d.grade;
+      document.getElementById('simCritVal').innerText = d.crit;
+      document.getElementById('simPassVal').innerText = d.pass;
+
+      const isPass = d.grade === 'A';
+      document.getElementById('simScoreVal').className = `text-base font-extrabold ${isPass ? 'text-emerald-400' : 'text-red-400'}`;
+      document.getElementById('simGradeVal').className = `text-base font-extrabold ${isPass ? 'text-emerald-400' : 'text-red-400'}`;
+
+      const list = document.getElementById('simFindingsList');
+      list.innerHTML = d.findings.map(f => {
+        const badgeColor = f.sev === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border-red-500/40'
+                         : (f.sev === 'HIGH' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40');
+        return `
+          <div class="flex items-center gap-2">
+            <span class="px-1.5 py-0.2 rounded text-xs font-bold border ${badgeColor}">${f.sev}</span>
+            <span class="text-gray-200 truncate">${f.title}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Tab 3: Batch Run Simulator
+    function runBatchSimulation() {
+      const bar = document.getElementById('batchProgressBar');
+      bar.style.width = '20%';
+      setTimeout(() => { bar.style.width = '65%'; }, 250);
+      setTimeout(() => {
+        bar.style.width = '100%';
+        alert('Fleet audit completed across 3 microservices! Average Score: 72.6 / 100');
+      }, 550);
+    }
+
+    // Tab 5: Hardening Snippets
+    function setHardeningSnippet(key) {
+      activeSnippetKey = key;
+      document.querySelectorAll('#tabContent-5 button[id^="hardNav-"]').forEach(b => {
+        b.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-[var(--card,#111827)] text-gray-400 hover:text-white';
+      });
+      document.getElementById(`hardNav-${key}`).className = 'px-2 py-0.5 rounded text-xs font-semibold bg-blue-600 text-white';
+      document.getElementById('hardeningCodeBox').innerText = SNIPPETS[key];
+    }
+
+    function copySnippetText() {
+      navigator.clipboard.writeText(SNIPPETS[activeSnippetKey]);
+      const btn = document.getElementById('copySnippetBtn');
+      btn.innerText = '✓ Copied!';
+      setTimeout(() => { btn.innerText = '📋 Copy Snippet'; }, 1500);
+    }
+
+    // Tab 6: AI Approval
+    function submitApproval(approved) {
+      const msg = document.getElementById('approvalResultMsg');
+      if (approved) {
+        msg.className = 'text-emerald-400 font-bold text-xs';
+        msg.innerText = `✓ APPROVED: Logged to audit trail at ${new Date().toLocaleTimeString()}`;
+      } else {
+        msg.className = 'text-red-400 font-bold text-xs';
+        msg.innerText = '✕ REJECTED: Remediation blocked by human operator';
+      }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTargetPreset('insecure');
+      setHardeningSnippet('nginx');
+    });
+  </script>
+</body>
+</html>
